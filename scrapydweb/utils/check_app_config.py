@@ -379,13 +379,7 @@ def check_scrapyd_servers(config):
         public_url = public_url.strip(' /')
         servers.append((group, ip, port, auth, public_url))
 
-    def key_func(arg):
-        _group, _ip, _port, _auth, _public_url = arg
-        parts = _ip.split('.')
-        parts = [('0' * (3 - len(part)) + part) for part in parts]
-        return [_group, '.'.join(parts), int(_port)]
-
-    servers = sorted(set(servers), key=key_func)
+    servers = list(dict.fromkeys(servers))
     if config.get('CHECK_SCRAPYD_SERVERS', True):
         check_scrapyd_connectivity(servers)
 

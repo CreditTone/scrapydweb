@@ -1,6 +1,7 @@
 # coding: utf-8
 from collections import OrderedDict
 from datetime import datetime
+import os
 import re
 import traceback
 
@@ -145,7 +146,8 @@ class JobsView(BaseView):
             if not self.LOCAL_SCRAPYD_LOGS_DIR:
                 flash(("Set up the LOCAL_SCRAPYD_LOGS_DIR option to speed up the loading of scrapy logfiles "
                       "for the LOCAL_SCRAPYD_SERVER %s" % self.SCRAPYD_SERVER), self.WARN)
-            if not self.ENABLE_LOGPARSER:
+            external_logparser_stats = os.path.join(self.LOCAL_SCRAPYD_LOGS_DIR, 'stats.json')
+            if not self.ENABLE_LOGPARSER and not os.path.isfile(external_logparser_stats):
                 flash("Set 'ENABLE_LOGPARSER = True' to run LogParser as a subprocess at startup", self.WARN)
         if not self.ENABLE_MONITOR and self.SCRAPYD_SERVERS_AMOUNT == 1:
             flash("Set 'ENABLE_MONITOR = True' to enable the monitor feature", self.INFO)

@@ -1,4 +1,6 @@
 # coding: utf-8
+import os
+
 from flask import flash, render_template, url_for
 
 from ...common import handle_metadata
@@ -30,7 +32,9 @@ class ServersView(BaseView):
         if self.SCRAPYD_SERVERS_AMOUNT > 1 and not (self.metadata['pageview'] > 2 and self.metadata['pageview'] % 100):
             if not self.ENABLE_AUTH:
                 flash("Set 'ENABLE_AUTH = True' to enable basic auth for web UI", self.INFO)
-            if self.IS_LOCAL_SCRAPYD_SERVER and not self.ENABLE_LOGPARSER:
+            external_logparser_stats = os.path.join(self.LOCAL_SCRAPYD_LOGS_DIR, 'stats.json')
+            if (self.IS_LOCAL_SCRAPYD_SERVER and not self.ENABLE_LOGPARSER
+                    and not os.path.isfile(external_logparser_stats)):
                 flash("Set 'ENABLE_LOGPARSER = True' to run LogParser as a subprocess at startup", self.WARN)
             if not self.ENABLE_MONITOR:
                 flash("Set 'ENABLE_MONITOR = True' to enable the monitor feature", self.INFO)
