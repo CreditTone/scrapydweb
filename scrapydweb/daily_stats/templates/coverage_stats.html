@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>爬虫抓全率</title>
+  <style>
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background:
+      radial-gradient(circle at 18% 18%, rgba(53, 213, 255, 0.22), transparent 30%),
+      radial-gradient(circle at 82% 8%, rgba(78, 224, 139, 0.16), transparent 24%),
+      linear-gradient(135deg, rgba(3, 9, 18, 0.88) 0%, rgba(5, 17, 31, 0.76) 45%, rgba(3, 8, 15, 0.90) 100%),
+      url("https://www.oxts.com/wp-content/uploads/2025/02/Satellite-view-of-earth-from-space-cropped-for-web-1-1200x0-c-default.webp");
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    color: #303133;
+  }
+  * {
+    box-sizing: border-box;
+  }
+  .page {
+    max-width: 1760px;
+    margin: 0 auto;
+    padding: 32px 20px 40px;
+    position: relative;
+  }
+  .header {
+    margin-bottom: 16px;
+  }
+  .title {
+    margin: 0 0 8px;
+    font-size: 28px;
+    line-height: 1.2;
+  }
+  .subtitle {
+    color: #606266;
+    margin: 0;
+  }
+  .card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(31, 35, 41, 0.08);
+    padding: 20px 20px 24px;
+  }
+  .muted {
+    color: #909399;
+  }
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin: 16px 0 20px;
+  }
+  .toolbar input[type="date"] {
+    border: 1px solid #dcdfe6;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 14px;
+  }
+  .button {
+    display: inline-block;
+    border: 0;
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 14px;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .button.safe {
+    background: #67c23a;
+    color: #fff;
+  }
+  .button.normal {
+    background: #ecf5ff;
+    color: #409eff;
+  }
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(160px, 1fr));
+    gap: 12px;
+    margin: 0 0 20px;
+  }
+  .summary-item {
+    border: 1px solid #ebeef5;
+    border-radius: 10px;
+    padding: 14px 16px;
+    background: #fafcff;
+  }
+  .summary-label {
+    font-size: 13px;
+    color: #909399;
+    margin-bottom: 8px;
+  }
+  .summary-value {
+    font-size: 24px;
+    font-weight: 600;
+    color: #303133;
+    line-height: 1.1;
+  }
+  .report-table {
+    width: 100%;
+    min-width: 1280px;
+    border-collapse: collapse;
+    background: #fff;
+  }
+  .table-shell {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .report-table th,
+  .report-table td {
+    border: 1px solid #ebeef5;
+    padding: 10px 6px;
+    text-align: left;
+    vertical-align: top;
+  }
+  .report-table th {
+    background: #f5f7fa;
+    white-space: nowrap;
+  }
+  .report-table td.center,
+  .report-table th.center {
+    text-align: center;
+  }
+  .status-tag {
+    display: inline-block;
+    min-width: 92px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    color: #fff;
+    text-align: center;
+    font-size: 13px;
+  }
+  .status-tag.safe {
+    background: #67c23a;
+  }
+  .status-tag.danger {
+    background: #f56c6c;
+  }
+  .rate {
+    color: #303133;
+    font-weight: 600;
+  }
+  .rate.good {
+    color: #67c23a;
+  }
+  .rate.medium,
+  .rate.low {
+    color: #e6a23c;
+  }
+  .task-link,
+  .task-link:visited {
+    color: #303133;
+    text-decoration: none;
+  }
+  .task-link:hover {
+    color: #409eff;
+    text-decoration: none;
+  }
+  code {
+    background: #f5f7fa;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  body {
+    color: #d9eaff;
+  }
+  .title,
+  .summary-value,
+  .task-link,
+  .task-link:visited {
+    color: #eef7ff;
+  }
+  .subtitle,
+  .muted,
+  .summary-label {
+    color: #9fb7cf;
+  }
+  .title {
+    text-shadow: 0 0 24px rgba(53, 213, 255, 0.28);
+  }
+  .card {
+    background: rgba(9, 25, 47, 0.76);
+    border: 1px solid rgba(122, 188, 255, 0.20);
+    box-shadow: 0 22px 60px rgba(0, 0, 0, 0.30), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(14px);
+  }
+  .summary-item {
+    background: rgba(13, 35, 64, 0.72);
+    border-color: rgba(122, 188, 255, 0.18);
+  }
+  .button.normal {
+    background: rgba(53, 213, 255, 0.12);
+    color: #bfefff;
+    border: 1px solid rgba(53, 213, 255, 0.26);
+  }
+  .report-table {
+    background: rgba(7, 20, 38, 0.66);
+    color: #d9eaff;
+  }
+  .report-table th,
+  .report-table td {
+    border-color: rgba(122, 188, 255, 0.14);
+  }
+  .report-table th {
+    background: rgba(13, 35, 64, 0.86);
+    color: #eef7ff;
+  }
+  .rate {
+    color: #eef7ff;
+  }
+  .rate.good {
+    color: #4ee08b;
+  }
+  .rate.medium,
+  .rate.low {
+    color: #ffd166;
+  }
+  code {
+    background: rgba(4, 15, 29, 0.70);
+    color: #bfefff;
+  }
+  @media (max-width: 900px) {
+    .page {
+      padding: 20px 12px 28px;
+    }
+    .card {
+      padding: 16px 12px 20px;
+    }
+    .summary-grid {
+      grid-template-columns: repeat(2, minmax(140px, 1fr));
+    }
+  }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="header">
+      <h1 class="title">爬虫抓全率</h1>
+      <p class="subtitle">独立只读服务。更新时间 {{ now }}</p>
+    </div>
+
+    <div class="card">
+      <p class="muted">说明1：本页面展示最近 100 条 SpiderMonitor 上报的终态事件，仅统计 <code>close</code> 和 <code>error</code>。</p>
+      <p class="muted">说明2：抓全率按 <code>itemsNums / totalNums</code> 计算；当预期抓取量为空或小于等于 0 时显示 <code>-</code>。</p>
+      <p class="muted">当前只读数据源：<code>{{ database_dir }}</code>，配置文件：<code>{{ settings_path }}</code>，状态库：<code>{{ status_db_path }}</code></p>
+
+      <div class="toolbar">
+        <a class="button normal" href="{{ url_for('daily_stats.daily_stats') }}">任务日报</a>
+        <a class="button normal" href="{{ url_for('daily_stats.weekly_stats') }}">任务周报</a>
+        <a class="button normal" href="{{ url_for('daily_stats.annual_stats') }}">任务年报</a>
+      </div>
+
+      <div class="summary-grid">
+        <div class="summary-item">
+          <div class="summary-label">任务数</div>
+          <div class="summary-value">{{ summary.task_count }}</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-label">正常结束</div>
+          <div class="summary-value">{{ summary.success_count }}</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-label">异常结束</div>
+          <div class="summary-value">{{ summary.error_count }}</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-label">抓取总量</div>
+          <div class="summary-value">{{ summary.total_items }}</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-label">整体抓全率</div>
+          <div class="summary-value">{{ summary.overall_coverage_rate }}</div>
+        </div>
+      </div>
+
+      {% if rows %}
+      <div class="table-shell">
+      <table class="report-table">
+        <thead>
+          <tr>
+            <th>任务名</th>
+            <th>爬虫</th>
+            <th>JobId</th>
+            <th class="center">结束状态</th>
+            <th class="center">预期抓取</th>
+            <th class="center">URL 数量</th>
+            <th class="center">抓取数量</th>
+            <th class="center">抓全率</th>
+            <th class="center">上报时间</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for row in rows %}
+          <tr>
+            <td>{% set doc_url = spider_doc_url(row.spider) %}{% if doc_url %}<a class="task-link" href="{{ doc_url }}">{{ row.name }}</a>{% else %}{{ row.name }}{% endif %}</td>
+            <td>{{ row.spider }}</td>
+            <td>{{ row.job_id }}</td>
+            <td class="center"><span class="status-tag {{ row.status_class }}">{{ row.status_text }}</span></td>
+            <td class="center">{{ row.total_nums }}</td>
+            <td class="center">{{ row.url_nums }}</td>
+            <td class="center">{{ row.items_nums }}</td>
+            <td class="center"><span class="rate {{ row.rate_class }}">{{ row.coverage_rate }}</span></td>
+            <td class="center">{{ row.event_time }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      </div>
+      {% else %}
+      <p class="muted">当前没有抓全率上报数据。</p>
+      {% endif %}
+    </div>
+  </div>
+</body>
+</html>

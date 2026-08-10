@@ -296,6 +296,9 @@ def handle_route(app):
     from .views.system.settings import SettingsView
     register_view(SettingsView, 'settings', [('settings', None)])
 
+    from .daily_stats import bp as daily_stats_bp
+    app.register_blueprint(daily_stats_bp)
+
 
 def handle_template_context(app):
     STATIC = 'static'

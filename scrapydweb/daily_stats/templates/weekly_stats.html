@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>爬虫任务周报</title>
+  <style>
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background:
+      radial-gradient(circle at 18% 18%, rgba(53, 213, 255, 0.22), transparent 30%),
+      radial-gradient(circle at 82% 8%, rgba(78, 224, 139, 0.16), transparent 24%),
+      linear-gradient(135deg, rgba(3, 9, 18, 0.88) 0%, rgba(5, 17, 31, 0.76) 45%, rgba(3, 8, 15, 0.90) 100%),
+      url("https://www.oxts.com/wp-content/uploads/2025/02/Satellite-view-of-earth-from-space-cropped-for-web-1-1200x0-c-default.webp");
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    color: #303133;
+  }
+  * {
+    box-sizing: border-box;
+  }
+  .page {
+    max-width: 1680px;
+    margin: 0 auto;
+    padding: 32px 20px 40px;
+    position: relative;
+  }
+  .header {
+    margin-bottom: 16px;
+  }
+  .header-card {
+    background: rgba(255, 255, 255, 0.94);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(31, 35, 41, 0.08);
+    padding: 20px 20px 24px;
+  }
+  .title {
+    margin: 0 0 8px;
+    font-size: 28px;
+    line-height: 1.2;
+  }
+  .subtitle {
+    color: #606266;
+    margin: 0;
+  }
+  .card {
+    background: rgba(255, 255, 255, 0.94);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(31, 35, 41, 0.08);
+    padding: 20px 20px 24px;
+  }
+  .muted {
+    color: #909399;
+  }
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin: 16px 0 20px;
+  }
+  .toolbar input[type="date"] {
+    border: 1px solid #dcdfe6;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 14px;
+  }
+  .toolbar select {
+    border: 1px solid #dcdfe6;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 14px;
+    background: #fff;
+    color: #303133;
+    min-width: 240px;
+  }
+  .button {
+    display: inline-block;
+    border: 0;
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 14px;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .button.safe {
+    background: #67c23a;
+    color: #fff;
+  }
+  .button.normal {
+    background: #ecf5ff;
+    color: #409eff;
+  }
+  .copy-feedback {
+    min-height: 20px;
+    margin: 0 0 14px;
+    color: #67c23a;
+    font-size: 13px;
+  }
+  .copy-feedback.error {
+    color: #f56c6c;
+  }
+  .week-band {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(180px, 1fr));
+    gap: 10px;
+    margin: 0 0 14px;
+  }
+  .week-block {
+    display: block;
+    border-radius: 10px;
+    padding: 12px 14px;
+    border: 1px solid #ebeef5;
+    text-decoration: none;
+  }
+  .week-block.previous {
+    background: #f7f9fc;
+  }
+  .week-block.current {
+    background: #edf9f1;
+    border-color: #95d5a6;
+  }
+  .week-block.next {
+    background: #f7f9fc;
+  }
+  .week-block-label {
+    font-size: 13px;
+    color: #606266;
+    margin-bottom: 6px;
+  }
+  .week-block-range {
+    font-size: 16px;
+    font-weight: 600;
+    color: #303133;
+  }
+  .week-block:hover {
+    box-shadow: 0 6px 18px rgba(31, 35, 41, 0.08);
+  }
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(160px, 1fr));
+    gap: 12px;
+    margin: 14px 0 20px;
+  }
+  .summary-item {
+    background: #f8fafc;
+    border: 1px solid #ebeef5;
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .summary-label {
+    color: #909399;
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+  .summary-value {
+    color: #303133;
+    font-size: 24px;
+    font-weight: 600;
+  }
+  .daily-stats-table {
+    width: 100%;
+    min-width: 1180px;
+    border-collapse: collapse;
+    background: #fff;
+  }
+  .table-shell {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .daily-stats-table th,
+  .daily-stats-table td {
+    border: 1px solid #ebeef5;
+    padding: 10px 6px;
+    text-align: left;
+    vertical-align: top;
+  }
+  .daily-stats-table th {
+    background: #f5f7fa;
+    white-space: nowrap;
+  }
+  .daily-stats-table td.center,
+  .daily-stats-table th.center {
+    text-align: center;
+  }
+  .alert-row td {
+    background: #fff1f0;
+    color: #c45656;
+  }
+  .week-change.positive {
+    color: #67c23a;
+    font-weight: 600;
+  }
+  .week-change.negative {
+    color: #e6a23c;
+    font-weight: 600;
+  }
+  .task-link,
+  .task-link:visited {
+    color: #303133;
+    text-decoration: none;
+  }
+  .task-link:hover {
+    color: #409eff;
+    text-decoration: none;
+  }
+  .metric-link {
+    color: #409eff;
+    text-decoration: none;
+  }
+  .metric-link:visited,
+  .metric-link:hover,
+  .metric-link:active {
+    color: #409eff;
+    text-decoration: none;
+  }
+  body {
+    color: #d9eaff;
+  }
+  .header-card,
+  .card {
+    background: rgba(9, 25, 47, 0.76);
+    border: 1px solid rgba(122, 188, 255, 0.20);
+    box-shadow: 0 22px 60px rgba(0, 0, 0, 0.30), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(14px);
+  }
+  .title,
+  .summary-value,
+  .week-block-range,
+  .task-link,
+  .task-link:visited {
+    color: #eef7ff;
+  }
+  .subtitle,
+  .muted,
+  .summary-label,
+  .week-block-label {
+    color: #9fb7cf;
+  }
+  .summary-item,
+  .week-block {
+    background: rgba(13, 35, 64, 0.72);
+    border-color: rgba(122, 188, 255, 0.18);
+  }
+  .week-block.previous,
+  .week-block.next {
+    background: rgba(13, 35, 64, 0.72);
+    border-color: rgba(122, 188, 255, 0.18);
+  }
+  .week-block.current {
+    background: rgba(78, 224, 139, 0.16);
+    border-color: rgba(78, 224, 139, 0.34);
+  }
+  .toolbar select {
+    background: rgba(4, 15, 29, 0.68);
+    border-color: rgba(122, 188, 255, 0.26);
+    color: #eef7ff;
+  }
+  .button.normal {
+    background: rgba(53, 213, 255, 0.12);
+    color: #bfefff;
+    border: 1px solid rgba(53, 213, 255, 0.26);
+  }
+  .daily-stats-table {
+    background: rgba(7, 20, 38, 0.66);
+    color: #d9eaff;
+  }
+  .daily-stats-table th,
+  .daily-stats-table td {
+    border-color: rgba(122, 188, 255, 0.14);
+  }
+  .daily-stats-table th {
+    background: rgba(13, 35, 64, 0.86);
+    color: #eef7ff;
+  }
+  .alert-row td {
+    background: rgba(255, 107, 107, 0.14);
+    color: #ffd1d1;
+  }
+  code {
+    background: rgba(4, 15, 29, 0.70);
+    color: #bfefff;
+  }
+  @media (max-width: 1100px) {
+    .page {
+      padding: 20px 12px 28px;
+    }
+    .summary-grid {
+      grid-template-columns: repeat(2, minmax(160px, 1fr));
+    }
+  }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="header">
+      <div class="header-card">
+        <h1 class="title">爬虫任务周报</h1>
+        <p class="subtitle">统计周期 {{ week_label }}，更新时间 {{ now }}</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <p class="muted">说明1：周报按任务聚合，统一展示定时和独立任务执行；统计周期以每周四 00:00 为切割点。</p>
+      {% if is_current_week %}
+      <p class="muted">说明2：当前查询的是本周，"应执行" 按截至当前时点本应执行的次数统计，不包含本周剩余时间的未来计划。</p>
+      {% else %}
+      <p class="muted">说明2：当前查询的是历史周，"应执行" 按完整自然周统计。</p>
+      {% endif %}
+      <p class="muted">说明3：定时任务的抓取总量来自状态库，独立任务的抓取总量来自 jobs.db；独立任务的应执行固定显示为 -。</p>
+      <p class="muted">当前只读数据源：<code>{{ database_dir }}</code>，配置文件：<code>{{ settings_path }}</code>，状态库：<code>{{ status_db_path }}</code></p>
+
+      <form class="toolbar" method="get" action="{{ url_for('daily_stats.weekly_stats') }}">
+        <label>周报</label>
+        <select name="date">
+          {% for option in week_options %}
+          <option value="{{ option.value }}" {% if option.is_selected %}selected{% endif %}>{{ option.label }}</option>
+          {% endfor %}
+        </select>
+        <button class="button safe" type="submit">切换</button>
+        {% if not is_current_week %}
+        <a class="button normal" href="{{ url_for('daily_stats.weekly_stats') }}">回到本周</a>
+        {% endif %}
+        <a class="button normal" href="{{ url_for('daily_stats.daily_stats') }}">任务日报</a>
+        <a class="button normal" href="{{ url_for('daily_stats.annual_stats', date=selected_date) }}">任务年报</a>
+        <a class="button normal" href="{{ url_for('daily_stats.coverage_stats', date=selected_date) }}">抓全率</a>
+        {% if rows %}
+        <button class="button normal" type="button" id="copy-weekly-table">复制表格</button>
+        {% endif %}
+      </form>
+
+      {% if rows %}
+      <div class="copy-feedback" id="copy-feedback"></div>
+      {% endif %}
+
+      <div class="week-band">
+        {% for block in week_blocks %}
+        <a class="week-block {{ block.css_class }}" href="{{ url_for('daily_stats.weekly_stats', date=block.start) }}">
+          <div class="week-block-label">{{ block.label }}</div>
+          <div class="week-block-range">{{ block.start }} ~ {{ block.end }}</div>
+        </a>
+        {% endfor %}
+      </div>
+
+      <div class="summary-grid">
+        <div class="summary-item">
+          <div class="summary-label">任务数</div>
+          <div class="summary-value">{{ summary.task_count }}</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-label">应执行</div>
+          <div class="summary-value">{{ summary.total_should_execute }}</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-label">实际执行</div>
+          <div class="summary-value">{{ summary.total_actual_execute }}</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-label">抓取总量</div>
+          <div class="summary-value" id="weekly-summary-scraped-total">{{ summary.total_scraped_items }}</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-label">整体运行成功率</div>
+          <div class="summary-value">{{ summary.overall_success_rate }}</div>
+        </div>
+      </div>
+
+      {% if rows %}
+      <div class="table-shell">
+      <table class="daily-stats-table" id="weekly-report-table">
+        <thead>
+          <tr>
+            <th>任务名</th>
+            <th>爬虫</th>
+            <th class="center">运行类型</th>
+            <th class="center">应执行</th>
+            <th class="center">实际执行</th>
+            <th class="center">运行成功率</th>
+            <th class="center">抓取总量</th>
+            <th class="center">日均抓取量</th>
+            <th class="center">较上周变化</th>
+            <th>主要失败原因</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for row in rows %}
+          <tr{% if row.highlight_danger %} class="alert-row"{% endif %} data-task-key="{{ row.task_key }}">
+            <td>{% set doc_url = spider_doc_url(row.spider) %}{% if doc_url %}<a class="task-link" href="{{ doc_url }}">{{ row.name }}</a>{% else %}{{ row.name }}{% endif %}</td>
+            <td><a class="task-link" href="{{ url_for('daily_stats.task_stats', spider=row.spider) }}">{{ row.spider }}</a></td>
+            <td class="center">{{ row.run_type }}</td>
+            <td class="center">{{ row.should_execute }}</td>
+            <td class="center">{{ row.actual_execute }}</td>
+            <td class="center">{{ row.success_rate }}</td>
+            <td class="center" data-role="scraped-total"><a class="metric-link" href="{{ url_for('daily_stats.task_stats', spider=row.spider) }}">{{ row.scraped_total }}</a></td>
+            <td class="center">{{ row.average_daily_items }}</td>
+            <td class="center week-change {{ row.week_change_class }}">{{ row.week_change }}</td>
+            <td>{{ row.failure_reason }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      </div>
+      {% else %}
+      <p class="muted">所选周没有可展示的定时任务数据。</p>
+      {% endif %}
+    </div>
+  </div>
+  {% if rows %}
+  <script>
+  (function () {
+    var button = document.getElementById('copy-weekly-table');
+    var table = document.getElementById('weekly-report-table');
+    var feedback = document.getElementById('copy-feedback');
+    if (!button || !table || !feedback) {
+      return;
+    }
+
+    function setFeedback(message, isError) {
+      feedback.textContent = message;
+      feedback.className = isError ? 'copy-feedback error' : 'copy-feedback';
+    }
+
+    function buildPlainText(tableElement) {
+      var rows = Array.prototype.slice.call(tableElement.querySelectorAll('tr'));
+      return rows.map(function (row) {
+        var cells = Array.prototype.slice.call(row.querySelectorAll('th, td'));
+        return cells.map(function (cell) {
+          return cell.innerText.replace(/\s+/g, ' ').trim();
+        }).join('\t');
+      }).join('\n');
+    }
+
+    function buildHtml(tableElement) {
+      var clone = tableElement.cloneNode(true);
+      clone.style.borderCollapse = 'collapse';
+      clone.style.width = '100%';
+      clone.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+      clone.style.fontSize = '14px';
+      clone.style.color = '#303133';
+      var cells = clone.querySelectorAll('th, td');
+      Array.prototype.forEach.call(cells, function (cell) {
+        cell.style.border = '1px solid #dcdfe6';
+        cell.style.padding = '6px 8px';
+        cell.style.textAlign = cell.classList.contains('center') ? 'center' : 'left';
+        cell.style.verticalAlign = 'top';
+        cell.style.color = '#303133';
+      });
+      var headers = clone.querySelectorAll('th');
+      Array.prototype.forEach.call(headers, function (header) {
+        header.style.background = '#f5f7fa';
+        header.style.fontWeight = '600';
+      });
+      var alertRows = clone.querySelectorAll('tr.alert-row td');
+      Array.prototype.forEach.call(alertRows, function (cell) {
+        cell.style.background = '#fff1f0';
+        cell.style.color = '#c45656';
+      });
+      var positiveCells = clone.querySelectorAll('.week-change.positive');
+      Array.prototype.forEach.call(positiveCells, function (cell) {
+        cell.style.color = '#67c23a';
+        cell.style.fontWeight = '600';
+      });
+      var negativeCells = clone.querySelectorAll('.week-change.negative');
+      Array.prototype.forEach.call(negativeCells, function (cell) {
+        cell.style.color = '#e6a23c';
+        cell.style.fontWeight = '600';
+      });
+      return clone.outerHTML;
+    }
+
+    function legacyCopy(htmlText, plainText) {
+      return new Promise(function (resolve, reject) {
+        function onCopy(event) {
+          event.preventDefault();
+          if (event.clipboardData) {
+            event.clipboardData.setData('text/html', htmlText);
+            event.clipboardData.setData('text/plain', plainText);
+            resolve();
+          } else {
+            reject(new Error('clipboardData unavailable'));
+          }
+        }
+
+        document.addEventListener('copy', onCopy, { once: true });
+        try {
+          var successful = document.execCommand('copy');
+          if (!successful) {
+            document.removeEventListener('copy', onCopy);
+            reject(new Error('execCommand failed'));
+          }
+        } catch (error) {
+          document.removeEventListener('copy', onCopy);
+          reject(error);
+        }
+      });
+    }
+
+    async function copyTable() {
+      var plainText = buildPlainText(table);
+      var htmlText = buildHtml(table);
+      try {
+        if (navigator.clipboard && window.ClipboardItem) {
+          await navigator.clipboard.write([
+            new ClipboardItem({
+              'text/plain': new Blob([plainText], { type: 'text/plain' }),
+              'text/html': new Blob([htmlText], { type: 'text/html' })
+            })
+          ]);
+        } else if (navigator.clipboard) {
+          await navigator.clipboard.writeText(plainText);
+        } else {
+          await legacyCopy(htmlText, plainText);
+        }
+        setFeedback('周报表格已复制，可直接粘贴到 wiki。', false);
+      } catch (error) {
+        try {
+          await legacyCopy(htmlText, plainText);
+          setFeedback('周报表格已复制，可直接粘贴到 wiki。', false);
+        } catch (legacyError) {
+          setFeedback('复制失败，请检查浏览器剪贴板权限。', true);
+        }
+      }
+    }
+
+    button.addEventListener('click', copyTable);
+  })();
+
+  function formatAnimatedNumber(value) {
+    return String(value).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+
+  function parseAnimatedNumber(text) {
+    text = (text || '').replace(/,/g, '').trim();
+    text = text.replace(/%$/, '');
+    if (!/^\d+(?:\.\d+)?$/.test(text)) {
+      return null;
+    }
+    return parseFloat(text);
+  }
+
+  function getDecimalPlaces(text) {
+    text = (text || '').replace(/,/g, '').trim();
+    text = text.replace(/%$/, '');
+    var match = text.match(/\.(\d+)$/);
+    return match ? match[1].length : 0;
+  }
+
+  function hasPercentSuffix(text) {
+    return /%$/.test((text || '').trim());
+  }
+
+  function formatAnimatedValue(value, decimalPlaces, suffix) {
+    if (decimalPlaces > 0) {
+      var fixedText = Number(value).toFixed(decimalPlaces);
+      var parts = fixedText.split('.');
+      return formatAnimatedNumber(parseInt(parts[0], 10)) + '.' + parts[1] + suffix;
+    }
+    return formatAnimatedNumber(Math.floor(value)) + suffix;
+  }
+
+  function animateNumberElement(element, startValue) {
+    if (element.children.length > 0) {
+      return;
+    }
+    var targetText = element.textContent;
+    var target = parseAnimatedNumber(element.textContent);
+    if (target === null || element.getAttribute('data-counted') === '1') {
+      return;
+    }
+    var decimalPlaces = getDecimalPlaces(targetText);
+    var suffix = hasPercentSuffix(targetText) ? '%' : '';
+    startValue = typeof startValue === 'number' ? startValue : 0;
+    element.setAttribute('data-counted', '1');
+    var startTime = null;
+    var duration = 1200;
+    function tick(timestamp) {
+      if (!startTime) {
+        startTime = timestamp;
+      }
+      var progress = Math.min((timestamp - startTime) / duration, 1);
+      var eased = 1 - Math.pow(1 - progress, 4);
+      element.textContent = formatAnimatedValue(startValue + (target - startValue) * eased, decimalPlaces, suffix);
+      if (progress < 1) {
+        window.requestAnimationFrame(tick);
+      } else {
+        element.textContent = formatAnimatedValue(target, decimalPlaces, suffix);
+      }
+    }
+    window.requestAnimationFrame(tick);
+  }
+
+  function setAnimatedNumberText(element, value) {
+    if (!element) {
+      return;
+    }
+    element = element.querySelector('a') || element;
+    var currentValue = parseAnimatedNumber(element.textContent);
+    var nextValue = parseAnimatedNumber(String(value));
+    if (currentValue !== null && nextValue !== null && currentValue === nextValue) {
+      element.textContent = formatAnimatedValue(nextValue, getDecimalPlaces(String(value)), hasPercentSuffix(String(value)) ? '%' : '');
+      element.setAttribute('data-counted', '1');
+      return;
+    }
+    element.removeAttribute('data-counted');
+    element.textContent = value;
+    animateNumberElement(element, currentValue || 0);
+  }
+
+  Array.prototype.forEach.call(
+    document.querySelectorAll('.summary-value, td.center, .metric-link'),
+    animateNumberElement
+  );
+
+  (function () {
+    var summaryElement = document.getElementById('weekly-summary-scraped-total');
+    var pollUrl = "{{ url_for('daily_stats.weekly_stats_scraped_totals', date=selected_date) }}";
+    var intervalMs = 3000;
+    var isPolling = false;
+
+    function updateValues(payload) {
+      if (!payload) {
+        return;
+      }
+      if (summaryElement && typeof payload.summary_total_scraped_items !== 'undefined') {
+        setAnimatedNumberText(summaryElement, payload.summary_total_scraped_items);
+      }
+      var rowTotals = payload.row_totals || {};
+      Object.keys(rowTotals).forEach(function (taskKey) {
+        var cell = document.querySelector('tr[data-task-key="' + taskKey + '"] [data-role="scraped-total"]');
+        if (cell) {
+          setAnimatedNumberText(cell, rowTotals[taskKey]);
+        }
+      });
+    }
+
+    async function poll() {
+      if (isPolling) {
+        return;
+      }
+      isPolling = true;
+      try {
+        var response = await fetch(pollUrl, { cache: 'no-store' });
+        if (!response.ok) {
+          return;
+        }
+        updateValues(await response.json());
+      } catch (error) {
+      } finally {
+        isPolling = false;
+      }
+    }
+
+    poll();
+    window.setInterval(poll, intervalMs);
+  })();
+  </script>
+  {% endif %}
+</body>
+</html>

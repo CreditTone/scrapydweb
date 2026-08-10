@@ -120,6 +120,8 @@ class TaskExecutor(object):
             db.session.add(task_job_result)
             db.session.commit()
             self.logger.info("Inserted task_job_result: %s", task_job_result)
+            from ...daily_stats.events import publish_task_job_created
+            publish_task_job_created(task_job_result.id)
 
     # https://stackoverflow.com/questions/13895176/sqlalchemy-and-sqlite-database-is-locked
     def db_update_task_result(self):
@@ -145,6 +147,8 @@ class TaskExecutor(object):
             task_result.pass_count = self.pass_count
             db.session.commit()
             self.logger.info("Inserted task_result: %s", task_result)
+            from ...daily_stats.events import publish_task_result_updated
+            publish_task_result_updated(task_result.id)
 
 
 def execute_task(task_id):

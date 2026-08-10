@@ -47,6 +47,22 @@ def main():
         sys.exit(u"\n{err}\n\nCheck and update your settings in {path}\n".format(
                  err=err, path=handle_slash(app.config['SCRAPYDWEB_SETTINGS_PY_PATH'])))
 
+    if app.config.get('ENABLE_DAILY_STATS', True):
+        from scrapydweb.daily_stats.common import configure, validate_scrapydweb_schema
+        from scrapydweb.daily_stats.events import start_event_worker
+        from scrapydweb.daily_stats.reconcile import start_reconcile_worker
+        if not app.config['SQLALCHEMY_DATABASE_URI'].startswith('sqlite'):
+            logger.error("Daily stats sync currently requires SQLite; configured database is unsupported")
+        else:
+            configure(app.config)
+            try:
+                validate_scrapydweb_schema()
+            except Exception as err:
+                logger.error("Daily stats sync disabled: %s", err)
+            else:
+                start_event_worker()
+                start_reconcile_worker()
+
     # https://stackoverflow.com/questions/34164464/flask-decorate-every-route-at-once
     @app.before_request
     def require_login():

@@ -33,7 +33,7 @@ class Metadata(db.Model):
     scheduler_state = db.Column(db.Integer, unique=False, nullable=False, default=STATE_RUNNING)
     jobs_per_page = db.Column(db.Integer, unique=False, nullable=False, default=100)
     tasks_per_page = db.Column(db.Integer, unique=False, nullable=False, default=100)
-    jobs_style = db.Column(db.String(8), unique=False, nullable=False, default='database')  # 'classic'
+    jobs_style = db.Column(db.String(8), unique=False, nullable=False, default='classic')  # 'database'
 
     def __repr__(self):
         return pformat(vars(self))

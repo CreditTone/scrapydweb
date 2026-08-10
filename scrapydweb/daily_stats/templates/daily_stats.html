@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>爬虫任务日报</title>
+  <style>
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background:
+      radial-gradient(circle at 18% 18%, rgba(53, 213, 255, 0.22), transparent 30%),
+      radial-gradient(circle at 82% 8%, rgba(78, 224, 139, 0.16), transparent 24%),
+      linear-gradient(135deg, rgba(3, 9, 18, 0.88) 0%, rgba(5, 17, 31, 0.76) 45%, rgba(3, 8, 15, 0.90) 100%),
+      url("https://www.oxts.com/wp-content/uploads/2025/02/Satellite-view-of-earth-from-space-cropped-for-web-1-1200x0-c-default.webp");
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    color: #303133;
+  }
+  * {
+    box-sizing: border-box;
+  }
+  .page {
+    max-width: 1680px;
+    margin: 0 auto;
+    padding: 32px 20px 40px;
+    position: relative;
+  }
+  .header {
+    margin-bottom: 16px;
+  }
+  .title {
+    margin: 0 0 8px;
+    font-size: 28px;
+    line-height: 1.2;
+    color: #eef7ff;
+    text-shadow: 0 0 24px rgba(53, 213, 255, 0.28);
+  }
+  .subtitle {
+    color: #d7e8f8;
+    margin: 0;
+  }
+  .card {
+    background: rgba(255, 255, 255, 0.94);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(31, 35, 41, 0.08);
+    padding: 20px 20px 24px;
+  }
+  .muted {
+    color: #909399;
+  }
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin: 16px 0 20px;
+  }
+  .toolbar input[type="date"] {
+    border: 1px solid #dcdfe6;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 14px;
+  }
+  .button {
+    display: inline-block;
+    border: 0;
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 14px;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .button.safe {
+    background: #67c23a;
+    color: #fff;
+  }
+  .button.normal {
+    background: #ecf5ff;
+    color: #409eff;
+  }
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(160px, 1fr));
+    gap: 12px;
+    margin: 0 0 20px;
+  }
+  .summary-item {
+    border: 1px solid #ebeef5;
+    border-radius: 10px;
+    padding: 14px 16px;
+    background: #fafcff;
+  }
+  .summary-label {
+    font-size: 13px;
+    color: #909399;
+    margin-bottom: 8px;
+  }
+  .summary-value {
+    font-size: 24px;
+    font-weight: 600;
+    color: #303133;
+    line-height: 1.1;
+  }
+  .task-group {
+    min-width: 92px;
+  }
+  .detail-toggle {
+    cursor: pointer;
+    color: #409eff;
+    user-select: none;
+  }
+  .detail-list {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .detail-item {
+    display: grid;
+    grid-template-columns: 120px 120px 100px;
+    gap: 8px;
+    align-items: center;
+    padding: 8px 10px;
+    border: 1px solid #ebeef5;
+    border-radius: 8px;
+    background: #fafafa;
+  }
+  .detail-item-label {
+    color: #909399;
+    font-size: 12px;
+  }
+  .detail-item-value {
+    color: #303133;
+    font-size: 13px;
+  }
+  .daily-stats-table {
+    width: 100%;
+    min-width: 1120px;
+    border-collapse: collapse;
+    background: #fff;
+  }
+  .table-shell {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .daily-stats-table th,
+  .daily-stats-table td {
+    border: 1px solid #ebeef5;
+    padding: 10px 6px;
+    text-align: left;
+    vertical-align: top;
+  }
+  .daily-stats-table th {
+    background: #f5f7fa;
+    white-space: nowrap;
+  }
+  .daily-stats-table td.center,
+  .daily-stats-table th.center {
+    text-align: center;
+  }
+  .status-tag {
+    display: inline-block;
+    min-width: 92px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    color: #fff;
+    text-align: center;
+    font-size: 13px;
+  }
+  .status-tag.safe {
+    background: #67c23a;
+  }
+  .status-tag.warning {
+    background: #e6a23c;
+  }
+  .status-tag.danger {
+    background: #f56c6c;
+  }
+  .status-tag.normal {
+    background: #909399;
+  }
+  .alert {
+    margin: 12px 0;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #fdf6ec;
+    color: #e6a23c;
+  }
+  code {
+    background: #f5f7fa;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  .task-link,
+  .task-link:visited {
+    color: #303133;
+    text-decoration: none;
+  }
+  .task-link:hover {
+    color: #409eff;
+    text-decoration: none;
+  }
+  body {
+    color: #d9eaff;
+  }
+  .card {
+    background: rgba(9, 25, 47, 0.76);
+    border: 1px solid rgba(122, 188, 255, 0.20);
+    box-shadow: 0 22px 60px rgba(0, 0, 0, 0.30), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(14px);
+  }
+  .muted,
+  .summary-label,
+  .detail-item-label {
+    color: #9fb7cf;
+  }
+  .summary-item,
+  .detail-item {
+    background: rgba(13, 35, 64, 0.72);
+    border-color: rgba(122, 188, 255, 0.18);
+  }
+  .summary-value,
+  .detail-item-value,
+  .task-link,
+  .task-link:visited {
+    color: #eef7ff;
+  }
+  .toolbar input[type="date"] {
+    background: rgba(4, 15, 29, 0.68);
+    border-color: rgba(122, 188, 255, 0.26);
+    color: #eef7ff;
+  }
+  .button.normal {
+    background: rgba(53, 213, 255, 0.12);
+    color: #bfefff;
+    border: 1px solid rgba(53, 213, 255, 0.26);
+  }
+  .daily-stats-table {
+    background: rgba(7, 20, 38, 0.66);
+    color: #d9eaff;
+  }
+  .daily-stats-table th,
+  .daily-stats-table td {
+    border-color: rgba(122, 188, 255, 0.14);
+  }
+  .daily-stats-table th {
+    background: rgba(13, 35, 64, 0.86);
+    color: #eef7ff;
+  }
+  .alert {
+    background: rgba(255, 209, 102, 0.12);
+    color: #ffd166;
+    border: 1px solid rgba(255, 209, 102, 0.22);
+  }
+  code {
+    background: rgba(4, 15, 29, 0.70);
+    color: #bfefff;
+  }
+  @media (max-width: 900px) {
+    .page {
+      padding: 20px 12px 28px;
+    }
+    .card {
+      padding: 16px 12px 20px;
+    }
+    .summary-grid {
+      grid-template-columns: repeat(2, minmax(140px, 1fr));
+    }
+  }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="header">
+      <h1 class="title">爬虫任务日报</h1>
+      <p class="subtitle">独立只读服务。更新时间 {{ now }}</p>
+    </div>
+
+    <div class="card">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+      {% endwith %}
+
+      <p class="muted">
+        说明1：本报表默认查询当天应该执行的任务，也支持指定日期查看过去的执行情况和未来的任务计划。
+      </p>
+      <p class="muted">
+        说明2：成功执行仅表示爬虫任务已成功拉起，不代表抓取结果一定正常，具体请结合任务日志进一步确认。
+      </p>
+      <p class="muted">
+        当前只读数据源：<code>{{ database_dir }}</code>，配置文件：<code>{{ settings_path }}</code>，状态库：<code>{{ status_db_path }}</code>
+      </p>
+      <p class="muted">
+        说明3：抓取数量由后台任务异步补齐，页面只读取状态库；暂未补齐时会显示 N/A。
+      </p>
+
+      <form class="toolbar" method="get" action="{{ url_for('daily_stats.daily_stats') }}">
+        <label>查询日期</label>
+        <input type="date" name="date" value="{{ selected_date }}">
+        <button class="button safe" type="submit">查询</button>
+        <a class="button normal" href="{{ url_for('daily_stats.daily_stats', date=previous_date) }}">前一天</a>
+        <a class="button normal" href="{{ url_for('daily_stats.daily_stats', date=next_date) }}">后一天</a>
+        <a class="button normal" href="{{ url_for('daily_stats.weekly_stats', date=selected_date) }}">任务周报</a>
+        <a class="button normal" href="{{ url_for('daily_stats.annual_stats', date=selected_date) }}">任务年报</a>
+        <a class="button normal" href="{{ url_for('daily_stats.coverage_stats', date=selected_date) }}">抓全率</a>
+        {% if not is_today %}
+        <a class="button normal" href="{{ url_for('daily_stats.daily_stats') }}">回到今天</a>
+        {% endif %}
+      </form>
+
+      <div class="summary-grid">
+        <div class="summary-item">
+          <div class="summary-label">任务数</div>
+          <div class="summary-value">{{ summary.task_count }}</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-label">应执行</div>
+          <div class="summary-value">{{ summary.total_should_execute }}</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-label">实际执行</div>
+          <div class="summary-value">{{ summary.total_actual_execute }}</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-label">抓取总量</div>
+          <div class="summary-value">{{ summary.total_scraped_items }}</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-label">整体运行成功率</div>
+          <div class="summary-value">{{ summary.overall_success_rate }}</div>
+        </div>
+      </div>
+
+      {% if carryover_rows %}
+      <h2 style="margin: 0 0 12px; font-size: 20px;">跨天任务提醒</h2>
+      <div class="alert">
+        提示：所选日期内存在 {{ carryover_rows|length }} 条更早启动且跨日未结束的任务，下面列出提醒，日报主表仍按任务启动日期归集。
+      </div>
+      <div class="table-shell" style="margin: 0 0 20px;">
+      <table class="daily-stats-table">
+        <thead>
+          <tr>
+            <th>任务名称</th>
+            <th>爬虫</th>
+            <th>JobId</th>
+            <th class="center">开始时间</th>
+            <th class="center">结束时间</th>
+            <th class="center">已抓取数量</th>
+            <th class="center">当前状态</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for row in carryover_rows %}
+          <tr>
+            <td>{% set doc_url = spider_doc_url(row.spider) %}{% if doc_url %}<a class="task-link" href="{{ doc_url }}">{{ row.name }}</a>{% else %}{{ row.name }}{% endif %}</td>
+            <td><a class="task-link" href="{{ url_for('daily_stats.task_stats', spider=row.spider) }}">{{ row.spider }}</a></td>
+            <td>{{ row.job_id }}</td>
+            <td class="center">{{ row.start_time }}</td>
+            <td class="center">{{ row.finish_time }}</td>
+            <td class="center">{{ row.scraped_items }}</td>
+            <td class="center"><span class="status-tag {{ row.status_class }}">{{ row.status_text }}</span></td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      </div>
+      {% endif %}
+
+      <h2 style="margin: 0 0 12px; font-size: 20px;">今日定时任务</h2>
+      {% if use_aggregate %}
+      <div class="table-shell">
+      <table class="daily-stats-table">
+        <thead>
+          <tr>
+            <th>任务名称</th>
+            <th>爬虫</th>
+            <th class="center">当日应执行</th>
+            <th class="center">实际执行</th>
+            <th class="center">成功</th>
+            <th class="center">失败</th>
+            <th class="center">执行中</th>
+            <th class="center">任务状态</th>
+            <th class="center">抓取数量</th>
+            <th class="center">最近执行时间</th>
+            <th>主要失败原因</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for row in timer_rows %}
+          <tr>
+            <td>{% set doc_url = spider_doc_url(row.spider) %}{% if doc_url %}<a class="task-link" href="{{ doc_url }}">{{ row.name }}</a>{% else %}{{ row.name }}{% endif %}</td>
+            <td><a class="task-link" href="{{ url_for('daily_stats.task_stats', spider=row.spider) }}">{{ row.spider }}</a></td>
+            <td class="center">{{ row.should_execute }}</td>
+            <td class="center">{{ row.actual_execute }}</td>
+            <td class="center">{{ row.success_count }}</td>
+            <td class="center">{{ row.failed_count }}</td>
+            <td class="center">{{ row.running_count }}</td>
+            <td class="center"><span class="status-tag {{ row.status_class }}">{{ row.status_text }}</span></td>
+            <td class="center">{{ row.scraped_total }}</td>
+            <td class="center">{{ row.latest_execute_time }}</td>
+            <td>{{ row.failure_reason }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      </div>
+      {% elif groups %}
+      <div class="table-shell">
+      <table class="daily-stats-table">
+        <thead>
+          <tr>
+            <th>任务名称</th>
+            <th>爬虫</th>
+            <th class="center">当日应执行</th>
+            <th>执行明细</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for group in groups %}
+          <tr>
+            <td>{% set doc_url = spider_doc_url(group.spider) %}{% if doc_url %}<a class="task-link" href="{{ doc_url }}">{{ group.name }}</a>{% else %}{{ group.name }}{% endif %}</td>
+            <td><a class="task-link" href="{{ url_for('daily_stats.task_stats', spider=group.spider) }}">{{ group.spider }}</a></td>
+            <td class="center">{{ group.total }}</td>
+            <td>
+              {% if group.total == 1 %}
+              {% set row = group.rows[0] %}
+              <div class="detail-list">
+                <div class="detail-item">
+                  <div>
+                    <div class="detail-item-label">计划执行时间</div>
+                    <div class="detail-item-value">{{ row.fire_time }}</div>
+                  </div>
+                  <div>
+                    <div class="detail-item-label">任务状态</div>
+                    <div class="detail-item-value"><span class="status-tag {{ row.judgment_class }}">{{ row.judgment }}</span></div>
+                  </div>
+                  <div>
+                    <div class="detail-item-label">抓取数量</div>
+                    <div class="detail-item-value">{{ row.scraped_items }}</div>
+                  </div>
+                </div>
+              </div>
+              {% else %}
+              <details class="task-group">
+                <summary class="detail-toggle">多次任务展开</summary>
+                <div class="detail-list">
+                {% for row in group.rows %}
+                  <div class="detail-item">
+                    <div>
+                      <div class="detail-item-label">计划执行时间</div>
+                      <div class="detail-item-value">{{ row.fire_time }}</div>
+                    </div>
+                    <div>
+                      <div class="detail-item-label">任务状态</div>
+                      <div class="detail-item-value"><span class="status-tag {{ row.judgment_class }}">{{ row.judgment }}</span></div>
+                    </div>
+                    <div>
+                      <div class="detail-item-label">抓取数量</div>
+                      <div class="detail-item-value">{{ row.scraped_items }}</div>
+                    </div>
+                  </div>
+                {% endfor %}
+                </div>
+              </details>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      </div>
+      {% else %}
+      <p class="muted">所选日期没有计划执行的定时任务。</p>
+      {% endif %}
+
+      <div style="height: 24px;"></div>
+
+      <h2 style="margin: 0 0 12px; font-size: 20px;">今日手动/独立任务</h2>
+      <p class="muted">说明：这里展示所选日期内手动启动、且不属于定时任务执行记录的任务。</p>
+
+      {% if use_aggregate %}
+      <div class="table-shell">
+      <table class="daily-stats-table">
+        <thead>
+          <tr>
+            <th>任务名称</th>
+            <th>爬虫</th>
+            <th class="center">实际执行</th>
+            <th class="center">成功</th>
+            <th class="center">失败</th>
+            <th class="center">执行中</th>
+            <th class="center">任务状态</th>
+            <th class="center">抓取数量</th>
+            <th class="center">最近执行时间</th>
+            <th>主要失败原因</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for row in manual_rows %}
+          <tr>
+            <td>{% set doc_url = spider_doc_url(row.spider) %}{% if doc_url %}<a class="task-link" href="{{ doc_url }}">{{ row.name }}</a>{% else %}{{ row.name }}{% endif %}</td>
+            <td><a class="task-link" href="{{ url_for('daily_stats.task_stats', spider=row.spider) }}">{{ row.spider }}</a></td>
+            <td class="center">{{ row.actual_execute }}</td>
+            <td class="center">{{ row.success_count }}</td>
+            <td class="center">{{ row.failed_count }}</td>
+            <td class="center">{{ row.running_count }}</td>
+            <td class="center"><span class="status-tag {{ row.status_class }}">{{ row.status_text }}</span></td>
+            <td class="center">{{ row.scraped_total }}</td>
+            <td class="center">{{ row.latest_execute_time }}</td>
+            <td>{{ row.failure_reason }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      </div>
+      {% elif manual_jobs %}
+      <div class="table-shell">
+      <table class="daily-stats-table">
+        <thead>
+          <tr>
+            <th class="center">节点</th>
+            <th>项目</th>
+            <th>爬虫</th>
+            <th>Job</th>
+            <th>开始时间</th>
+            <th>结束时间</th>
+            <th>任务状态</th>
+            <th>抓取数量</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for job in manual_jobs %}
+          <tr>
+            <td class="center">{{ job.node }}</td>
+            <td>{{ job.project }}</td>
+            <td><a class="task-link" href="{{ url_for('daily_stats.task_stats', spider=job.spider) }}">{{ job.spider }}</a></td>
+            <td>{{ job.job }}</td>
+            <td>{{ job.start }}</td>
+            <td>{{ job.finish }}</td>
+            <td><span class="status-tag {{ job.status_class }}">{{ job.status }}</span></td>
+            <td>{{ job.scraped_items }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      </div>
+      {% else %}
+      <p class="muted">所选日期没有手动启动的任务。</p>
+      {% endif %}
+    </div>
+  </div>
+  <script>
+  (function () {
+    var duration = 1200;
+
+    function formatNumber(value) {
+      return String(value).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+
+    function parseNumber(text) {
+      text = (text || '').replace(/,/g, '').trim();
+      text = text.replace(/%$/, '');
+      if (!/^\d+(?:\.\d+)?$/.test(text)) {
+        return null;
+      }
+      return parseFloat(text);
+    }
+
+    function getDecimalPlaces(text) {
+      text = (text || '').replace(/,/g, '').trim();
+      text = text.replace(/%$/, '');
+      var match = text.match(/\.(\d+)$/);
+      return match ? match[1].length : 0;
+    }
+
+    function hasPercentSuffix(text) {
+      return /%$/.test((text || '').trim());
+    }
+
+    function formatValue(value, decimalPlaces, suffix) {
+      if (decimalPlaces > 0) {
+        var fixedText = Number(value).toFixed(decimalPlaces);
+        var parts = fixedText.split('.');
+        return formatNumber(parseInt(parts[0], 10)) + '.' + parts[1] + suffix;
+      }
+      return formatNumber(Math.floor(value)) + suffix;
+    }
+
+    function animateNumberElement(element) {
+      if (element.children.length > 0) {
+        return;
+      }
+      var targetText = element.textContent;
+      var target = parseNumber(element.textContent);
+      if (target === null || element.getAttribute('data-counted') === '1') {
+        return;
+      }
+      var decimalPlaces = getDecimalPlaces(targetText);
+      var suffix = hasPercentSuffix(targetText) ? '%' : '';
+      element.setAttribute('data-counted', '1');
+      var startTime = null;
+      function tick(timestamp) {
+        if (!startTime) {
+          startTime = timestamp;
+        }
+        var progress = Math.min((timestamp - startTime) / duration, 1);
+        var eased = 1 - Math.pow(1 - progress, 4);
+        element.textContent = formatValue(target * eased, decimalPlaces, suffix);
+        if (progress < 1) {
+          window.requestAnimationFrame(tick);
+        } else {
+          element.textContent = formatValue(target, decimalPlaces, suffix);
+        }
+      }
+      window.requestAnimationFrame(tick);
+    }
+
+    Array.prototype.forEach.call(
+      document.querySelectorAll('.summary-value, td.center, .detail-item-value'),
+      animateNumberElement
+    );
+  })();
+  </script>
+</body>
+</html>

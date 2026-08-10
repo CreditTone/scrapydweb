@@ -77,6 +77,10 @@ LOCAL_SCRAPYD_LOGS_DIR = ''
 # Run 'logparser -h' to find out the config file of LogParser for more advanced settings.
 # Visit https://github.com/my8100/logparser for more info.
 ENABLE_LOGPARSER = False
+
+# Serve the built-in statistics UI at /stats/ and synchronize its aggregates
+# in a background thread. Data is stored in DATA_PATH/database/daily_stats.db.
+ENABLE_DAILY_STATS = True
 ############################## QUICK SETUP end ################################
 ############################## 快速设置 结束 ###################################
 

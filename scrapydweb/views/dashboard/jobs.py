@@ -17,7 +17,7 @@ _metadata = handle_metadata()
 metadata = dict(
     pageview=_metadata.get('pageview', 1),
     per_page=_metadata.get('jobs_per_page', 100),
-    style=_metadata.get('jobs_style', 'database'),
+    style=_metadata.get('jobs_style', 'classic'),
     unique_key_strings={}
 )
 
@@ -249,8 +249,10 @@ class JobsView(BaseView):
 
     def db_insert_jobs(self):
         records = []
+        finished_job_events = []
         for job in self.jobs:  # set(self.jobs): unhashable type: 'dict'
             record = self.Job.query.filter_by(project=job['project'], spider=job['spider'], job=job['job']).first()
+            previous_status = record.status if record else None
             if record:
                 self.logger.debug("Found job in database: %s", record)
                 if record.deleted == DELETED:
@@ -280,6 +282,8 @@ class JobsView(BaseView):
                 record.status = STATUS_RUNNING
             else:
                 record.status = STATUS_FINISHED
+                if previous_status != STATUS_FINISHED:
+                    finished_job_events.append(job['job'])
             if not job['start']:
                 record.pages = None
                 record.items = None
@@ -297,6 +301,10 @@ class JobsView(BaseView):
         # https://www.reddit.com/r/flask/comments/3tea4k/af_flasksqlalchemy_bulk_updateinsert/
         db.session.add_all(records)
         db.session.commit()
+        if finished_job_events:
+            from ...daily_stats.events import publish_job_finished
+            for job_id in finished_job_events:
+                publish_job_finished(job_id, server=self.SCRAPYD_SERVER)
 
     def db_clean_pending_jobs(self):
         current_pending_jobs = [(job['project'], job['spider'], job['job'])

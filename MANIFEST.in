@@ -3,5 +3,6 @@ include scrapydweb/data/parse/ScrapydWeb_demo.log
 include scrapydweb/data/demo_projects/ScrapydWeb_demo/scrapy.cfg
 graft scrapydweb/static
 graft scrapydweb/templates
+graft scrapydweb/daily_stats/templates
 graft scrapydweb/data/demo_projects/ScrapydWeb_demo/ScrapydWeb_demo
 global-exclude *.pyc

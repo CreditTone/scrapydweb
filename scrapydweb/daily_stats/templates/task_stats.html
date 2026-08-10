@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ summary.task_name }} - 任务统计</title>
+  <style>
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background:
+      radial-gradient(circle at 18% 18%, rgba(53, 213, 255, 0.22), transparent 30%),
+      radial-gradient(circle at 82% 8%, rgba(78, 224, 139, 0.16), transparent 24%),
+      linear-gradient(135deg, rgba(3, 9, 18, 0.88) 0%, rgba(5, 17, 31, 0.76) 45%, rgba(3, 8, 15, 0.90) 100%),
+      url("https://www.oxts.com/wp-content/uploads/2025/02/Satellite-view-of-earth-from-space-cropped-for-web-1-1200x0-c-default.webp");
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    color: #303133;
+  }
+  * {
+    box-sizing: border-box;
+  }
+  .page {
+    max-width: 1680px;
+    margin: 0 auto;
+    padding: 32px 20px 40px;
+    position: relative;
+  }
+  .card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(31, 35, 41, 0.08);
+    padding: 20px 20px 24px;
+  }
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .title {
+    margin: 0 0 8px;
+    font-size: 28px;
+    line-height: 1.2;
+  }
+  .subtitle {
+    margin: 0;
+    color: #606266;
+  }
+  .button {
+    display: inline-block;
+    border: 0;
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 14px;
+    text-decoration: none;
+    cursor: pointer;
+    background: #ecf5ff;
+    color: #409eff;
+    white-space: nowrap;
+  }
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin: 16px 0 20px;
+  }
+  .toolbar input[type="date"] {
+    border: 1px solid #dcdfe6;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 14px;
+    background: #fff;
+    color: #303133;
+  }
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(160px, 1fr));
+    gap: 12px;
+    margin: 16px 0 20px;
+  }
+  .summary-item {
+    background: #f8fafc;
+    border: 1px solid #ebeef5;
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .summary-label {
+    color: #909399;
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+  .summary-value {
+    color: #303133;
+    font-size: 24px;
+    font-weight: 600;
+  }
+  .chart-shell {
+    position: relative;
+    border: 1px solid #ebeef5;
+    border-radius: 12px;
+    background: linear-gradient(180deg, #fbfdff 0%, #f5f9ff 100%);
+    padding: 16px;
+    margin-bottom: 20px;
+  }
+  .chart-title {
+    margin: 0 0 12px;
+    font-size: 16px;
+  }
+  .chart-empty {
+    color: #909399;
+    padding: 32px 0;
+    text-align: center;
+  }
+  .chart-svg {
+    width: 100%;
+    height: 320px;
+    display: block;
+  }
+  .chart-grid {
+    stroke: #e4eaf3;
+    stroke-width: 1;
+  }
+  .chart-line {
+    fill: none;
+    stroke: #409eff;
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .chart-line-abnormal {
+    fill: none;
+    stroke: #e67e22;
+    stroke-width: 4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .chart-point {
+    fill: #fff;
+    stroke: #409eff;
+    stroke-width: 2;
+  }
+  .chart-label {
+    fill: #909399;
+    font-size: 12px;
+  }
+  .chart-gap-line {
+    stroke: #e67e22;
+    stroke-width: 1.5;
+    stroke-dasharray: 6 4;
+    opacity: 0.9;
+  }
+  .chart-gap-label {
+    fill: #d97706;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .chart-gap-dot {
+    fill: #f59e0b;
+  }
+  .chart-tooltip {
+    position: absolute;
+    min-width: 220px;
+    max-width: 320px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: rgba(21, 32, 52, 0.96);
+    color: #fff;
+    box-shadow: 0 14px 36px rgba(15, 23, 42, 0.28);
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 120ms ease, transform 120ms ease;
+    z-index: 3;
+  }
+  .chart-tooltip.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .chart-tooltip-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    line-height: 1.4;
+    word-break: break-all;
+  }
+  .chart-tooltip-grid {
+    display: grid;
+    grid-template-columns: 64px 1fr;
+    gap: 6px 10px;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .chart-tooltip-label {
+    color: rgba(255, 255, 255, 0.68);
+  }
+  .chart-tooltip-value {
+    color: #fff;
+    word-break: break-word;
+  }
+  .table-shell {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  table {
+    width: 100%;
+    min-width: 980px;
+    border-collapse: collapse;
+  }
+  th, td {
+    border: 1px solid #ebeef5;
+    padding: 10px 8px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th {
+    background: #f5f7fa;
+    white-space: nowrap;
+  }
+  .center {
+    text-align: center;
+  }
+  body {
+    color: #d9eaff;
+  }
+  .card {
+    background: rgba(9, 25, 47, 0.76);
+    border: 1px solid rgba(122, 188, 255, 0.20);
+    box-shadow: 0 22px 60px rgba(0, 0, 0, 0.30), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(14px);
+  }
+  .title,
+  .summary-value,
+  .chart-title {
+    color: #eef7ff;
+  }
+  .subtitle,
+  .summary-label,
+  .chart-empty {
+    color: #9fb7cf;
+  }
+  .toolbar input[type="date"] {
+    background: rgba(4, 15, 29, 0.68);
+    border-color: rgba(122, 188, 255, 0.26);
+    color: #eef7ff;
+  }
+  .button {
+    background: rgba(53, 213, 255, 0.12);
+    color: #bfefff;
+    border: 1px solid rgba(53, 213, 255, 0.26);
+  }
+  .summary-item,
+  .chart-shell {
+    background: rgba(13, 35, 64, 0.72);
+    border-color: rgba(122, 188, 255, 0.18);
+  }
+  .chart-grid {
+    stroke: rgba(169, 189, 208, 0.20);
+  }
+  .chart-label {
+    fill: #9fb7cf;
+  }
+  .chart-line {
+    stroke: #35d5ff;
+  }
+  .chart-point {
+    fill: #071426;
+    stroke: #35d5ff;
+  }
+  table {
+    background: rgba(7, 20, 38, 0.66);
+    color: #d9eaff;
+  }
+  th,
+  td {
+    border-color: rgba(122, 188, 255, 0.14);
+  }
+  th {
+    background: rgba(13, 35, 64, 0.86);
+    color: #eef7ff;
+  }
+  .table-shell + p,
+  .card > p {
+    color: #9fb7cf !important;
+  }
+  @media (max-width: 1100px) {
+    .page {
+      padding: 20px 12px 28px;
+    }
+    .header {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .summary-grid {
+      grid-template-columns: repeat(2, minmax(160px, 1fr));
+    }
+  }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="card">
+      <div class="header">
+        <div>
+          <h1 class="title">{{ summary.task_name }}</h1>
+          <p class="subtitle">爬虫 {{ summary.spider }}，{% if summary.query_mode == 'range' %}按日期区间展示{% else %}展示最近 100 次执行{% endif %}，预期执行间隔 {{ summary.expected_interval_text }}，更新时间 {{ now }}</p>
+          <p class="subtitle" style="margin-top:6px;">用于观察网站数据波动情况。</p>
+        </div>
+        <a class="button" href="{{ url_for('daily_stats.weekly_stats') }}">返回任务周报</a>
+      </div>
+
+      <form class="toolbar" method="get" action="{{ url_for('daily_stats.task_stats') }}">
+        <input type="hidden" name="spider" value="{{ summary.spider }}">
+        <label>开始日期</label>
+        <input type="date" name="start_date" value="{{ start_date }}">
+        <label>结束日期</label>
+        <input type="date" name="end_date" value="{{ end_date }}">
+        <button class="button" type="submit">查询区间</button>
+        <a class="button" href="{{ url_for('daily_stats.task_stats', spider=summary.spider) }}">回到最近100次</a>
+      </form>
+
+      <div class="summary-grid">
+        <div class="summary-item">
+          <div class="summary-label">执行次数</div>
+          <div class="summary-value">{{ summary.execution_count }}</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-label">抓取总量</div>
+          <div class="summary-value">{{ summary.total_scraped_items }}</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-label">运行成功率</div>
+          <div class="summary-value">{{ summary.success_rate }}</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-label">单次最高抓取</div>
+          <div class="summary-value">{{ summary.max_scraped_items }}</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-label">单次最低抓取</div>
+          <div class="summary-value">{{ summary.min_scraped_items }}</div>
+        </div>
+      </div>
+      <p style="margin:0 0 16px;color:#909399;font-size:13px;">说明：该页面用于观察网站数据波动情况。图表与表格基于{% if summary.query_mode == 'range' %}当前区间{% else %}最近 100 次原始样本{% endif %}生成，同一 job_id 只保留一条，优先保留爬虫触发记录；抓取数量为空或小于等于 0 的记录不纳入统计。</p>
+
+      <div class="chart-shell">
+        <h2 class="chart-title">任务抓取数量曲线</h2>
+        <svg class="chart-svg" id="task-chart" viewBox="0 0 1200 320" preserveAspectRatio="none"></svg>
+        <div class="chart-tooltip" id="task-chart-tooltip"></div>
+        <div class="chart-empty" id="task-chart-empty" {% if points %}style="display:none"{% endif %}>当前周期没有执行数据</div>
+        <p style="margin:12px 0 0;color:#909399;font-size:13px;">说明：数据可用于观测网站数据变化。</p>
+      </div>
+
+      {% if coverage_points %}
+      <div class="chart-shell">
+        <h2 class="chart-title">抓全率曲线</h2>
+        <svg class="chart-svg" id="coverage-chart" viewBox="0 0 1200 320" preserveAspectRatio="none"></svg>
+        <div class="chart-tooltip" id="coverage-chart-tooltip"></div>
+        <div class="chart-empty" id="coverage-chart-empty" style="display:none">当前周期没有抓全率数据</div>
+        <p style="margin:12px 0 0;color:#909399;font-size:13px;">说明：仅对有 SpiderMonitor 抓全率上报的任务展示。</p>
+      </div>
+      {% endif %}
+
+      <div class="chart-shell">
+        <h2 class="chart-title">任务用时曲线</h2>
+        <svg class="chart-svg" id="duration-chart" viewBox="0 0 1200 320" preserveAspectRatio="none"></svg>
+        <div class="chart-tooltip" id="duration-chart-tooltip"></div>
+        <div class="chart-empty" id="duration-chart-empty" {% if points %}style="display:none"{% endif %}>当前周期没有任务用时数据</div>
+        <p style="margin:12px 0 0;color:#909399;font-size:13px;">说明：可用于观察任务执行时长变化。</p>
+      </div>
+
+      <div class="table-shell">
+        <table>
+          <thead>
+            <tr>
+              <th class="center">序号</th>
+              <th>任务ID</th>
+              <th class="center">运行类型</th>
+              <th class="center">状态</th>
+              <th class="center">抓取数量</th>
+              <th class="center">抓全率</th>
+              <th>开始时间</th>
+              <th>结束时间</th>
+              <th class="center">任务用时</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for row in executions|reverse %}
+            <tr>
+              <td class="center">{{ row.index }}</td>
+              <td>{{ row.job_id }}</td>
+              <td class="center">{{ row.run_type }}</td>
+              <td class="center">{{ row.status }}</td>
+              <td class="center">{{ row.scraped_items }}</td>
+              <td class="center">{{ row.coverage_rate }}</td>
+              <td>{{ row.start_time }}</td>
+              <td>{{ row.finish_time }}</td>
+              <td class="center">{{ row.duration }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <script>
+  (function () {
+    var points = {{ points|tojson }};
+    var coveragePoints = {{ coverage_points|tojson }};
+    var expectedIntervalSeconds = {{ summary.expected_interval_seconds|tojson }};
+    if (!points.length) {
+      return;
+    }
+    var width = 1200;
+    var height = 320;
+    var defaultPaddingLeft = 64;
+    var paddingRight = 24;
+    var paddingTop = 24;
+    var paddingBottom = 48;
+
+    function parseTimestamp(value) {
+      if (!value || value === '-') {
+        return null;
+      }
+      return new Date(value.replace(' ', 'T'));
+    }
+
+    function getGapSeconds(previousPoint, currentPoint) {
+      var previousTime = parseTimestamp(previousPoint.display_timestamp || previousPoint.display_time);
+      var currentTime = parseTimestamp(currentPoint.display_timestamp || currentPoint.display_time);
+      if (!previousTime || !currentTime) {
+        return null;
+      }
+      return Math.round((currentTime.getTime() - previousTime.getTime()) / 1000);
+    }
+
+    function getGapDurationText(totalSeconds) {
+      if (!totalSeconds || totalSeconds <= 0) {
+        return '-';
+      }
+      var days = Math.floor(totalSeconds / 86400);
+      var remainder = totalSeconds % 86400;
+      var hours = Math.floor(remainder / 3600);
+      remainder = remainder % 3600;
+      var minutes = Math.floor(remainder / 60);
+      var parts = [];
+      if (days > 0) {
+        parts.push(days + '天');
+      }
+      if (hours > 0) {
+        parts.push(hours + '小时');
+      }
+      if (minutes > 0 && parts.length < 2) {
+        parts.push(minutes + '分');
+      }
+      if (!parts.length) {
+        parts.push(Math.max(1, totalSeconds) + '秒');
+      }
+      return parts.slice(0, 2).join('');
+    }
+
+    function getAxisDurationText(totalSeconds) {
+      if (!totalSeconds || totalSeconds <= 0) {
+        return '-';
+      }
+      var days = Math.floor(totalSeconds / 86400);
+      var remainder = totalSeconds % 86400;
+      var hours = Math.floor(remainder / 3600);
+      var minutes = Math.floor((remainder % 3600) / 60);
+      if (days > 0) {
+        return hours > 0 ? (days + '天' + hours + '时') : (days + '天');
+      }
+      if (hours > 0) {
+        return minutes > 0 ? (hours + '时' + minutes + '分') : (hours + '时');
+      }
+      if (minutes > 0) {
+        return minutes + '分';
+      }
+      return Math.max(1, totalSeconds) + '秒';
+    }
+
+    function isAbnormalGap(gapSeconds) {
+      if (!expectedIntervalSeconds || !gapSeconds || gapSeconds <= 0) {
+        return false;
+      }
+      var toleranceSeconds = Math.max(300, Math.round(expectedIntervalSeconds * 0.1));
+      return gapSeconds > (expectedIntervalSeconds + toleranceSeconds);
+    }
+
+    function renderChart(options) {
+      var svg = document.getElementById(options.svgId);
+      var empty = document.getElementById(options.emptyId);
+      var tooltip = document.getElementById(options.tooltipId);
+      var chartShell = svg ? svg.parentNode : null;
+      if (!svg || !empty || !tooltip || !chartShell) {
+        return;
+      }
+      var chartPoints = points.filter(function (point) {
+        return typeof options.valueGetter(point) === 'number' && !isNaN(options.valueGetter(point));
+      });
+      if (!chartPoints.length) {
+        empty.style.display = '';
+        return;
+      }
+      empty.style.display = 'none';
+      var paddingLeft = options.paddingLeft || defaultPaddingLeft;
+      var innerWidth = width - paddingLeft - paddingRight;
+      var innerHeight = height - paddingTop - paddingBottom;
+      var maxValue = Math.max.apply(null, chartPoints.map(function (point) { return options.valueGetter(point); }));
+      var safeMaxValue = maxValue > 0 ? maxValue : 1;
+      var xStep = chartPoints.length > 1 ? innerWidth / (chartPoints.length - 1) : 0;
+
+      function append(tagName, attrs) {
+        var node = document.createElementNS('http://www.w3.org/2000/svg', tagName);
+        Object.keys(attrs).forEach(function (key) {
+          node.setAttribute(key, attrs[key]);
+        });
+        svg.appendChild(node);
+        return node;
+      }
+
+      function showTooltip(point) {
+        tooltip.innerHTML =
+          '<div class="chart-tooltip-title">' + point.label + '</div>' +
+          '<div class="chart-tooltip-grid">' +
+            '<div class="chart-tooltip-label">时间</div><div class="chart-tooltip-value">' + point.display_time + '</div>' +
+            '<div class="chart-tooltip-label">类型</div><div class="chart-tooltip-value">' + point.run_type + '</div>' +
+            '<div class="chart-tooltip-label">状态</div><div class="chart-tooltip-value">' + point.status + '</div>' +
+            '<div class="chart-tooltip-label">' + options.tooltipLabel + '</div><div class="chart-tooltip-value">' + options.tooltipValue(point) + '</div>' +
+          '</div>';
+
+        var shellRect = chartShell.getBoundingClientRect();
+        var svgRect = svg.getBoundingClientRect();
+        var left = (point._chartX / width) * svgRect.width;
+        var top = (point._chartY / height) * svgRect.height;
+        tooltip.style.left = Math.min(
+          Math.max(left + 18, 8),
+          Math.max(shellRect.width - 332, 8)
+        ) + 'px';
+        tooltip.style.top = Math.max(top - 18, 12) + 'px';
+        tooltip.classList.add('visible');
+      }
+
+      function hideTooltip() {
+        tooltip.classList.remove('visible');
+      }
+
+      [0, 0.25, 0.5, 0.75, 1].forEach(function (ratio) {
+        var y = paddingTop + innerHeight * ratio;
+        append('line', {
+          x1: paddingLeft,
+          y1: y,
+          x2: width - paddingRight,
+          y2: y,
+          class: 'chart-grid'
+        });
+        var value = options.axisFormatter(Math.round(safeMaxValue * (1 - ratio)));
+        var text = append('text', {
+          x: paddingLeft - 12,
+          y: y + 4,
+          'text-anchor': 'end',
+          class: 'chart-label'
+        });
+        text.textContent = value;
+      });
+
+      chartPoints.forEach(function (point, index) {
+        var x = paddingLeft + xStep * index;
+        point._chartX = x;
+        point._chartY = paddingTop + innerHeight - (options.valueGetter(point) / safeMaxValue) * innerHeight;
+      });
+
+      var pathPoints = chartPoints.map(function (point) {
+        return point._chartX + ',' + point._chartY;
+      }).join(' ');
+
+      append('polyline', {
+        points: pathPoints,
+        class: 'chart-line'
+      });
+
+      chartPoints.forEach(function (point, index) {
+        if (index === 0) {
+          return;
+        }
+        var previousPoint = chartPoints[index - 1];
+        var gapSeconds = getGapSeconds(previousPoint, point);
+        if (isAbnormalGap(gapSeconds)) {
+          append('line', {
+            x1: previousPoint._chartX,
+            y1: previousPoint._chartY,
+            x2: point._chartX,
+            y2: point._chartY,
+            class: 'chart-line-abnormal'
+          });
+          var gapX = (previousPoint._chartX + point._chartX) / 2;
+          var gapTopY = Math.max(Math.min(previousPoint._chartY, point._chartY) - 24, paddingTop + 18);
+          var gapBottomY = Math.min(height - paddingBottom + 4, gapTopY + 20);
+
+          append('line', {
+            x1: gapX,
+            y1: gapTopY,
+            x2: gapX,
+            y2: gapBottomY,
+            class: 'chart-gap-line'
+          });
+          append('circle', {
+            cx: gapX,
+            cy: gapTopY,
+            r: 3,
+            class: 'chart-gap-dot'
+          });
+          var gapLabel = append('text', {
+            x: gapX,
+            y: Math.max(gapTopY - 8, paddingTop + 12),
+            'text-anchor': 'middle',
+            class: 'chart-gap-label'
+          });
+          gapLabel.textContent = '间隔 ' + getGapDurationText(gapSeconds);
+        }
+      });
+
+      chartPoints.forEach(function (point) {
+        var circle = append('circle', {
+          cx: point._chartX,
+          cy: point._chartY,
+          r: 4,
+          class: 'chart-point'
+        });
+        circle.style.cursor = 'pointer';
+        circle.addEventListener('mouseenter', function () {
+          showTooltip(point);
+        });
+        circle.addEventListener('mouseleave', hideTooltip);
+
+        var shouldShowAxisLabel = (
+          point.index === 1
+          || point.index === chartPoints.length
+          || point.index % Math.max(1, Math.ceil(chartPoints.length / 8)) === 0
+        );
+        if (shouldShowAxisLabel) {
+          var labelText = append('text', {
+            x: point._chartX,
+            y: height - 18,
+            'text-anchor': 'middle',
+            class: 'chart-label'
+          });
+          labelText.textContent = point.axis_date;
+        }
+      });
+      svg.addEventListener('mouseleave', hideTooltip);
+    }
+
+    renderChart({
+      svgId: 'task-chart',
+      emptyId: 'task-chart-empty',
+      tooltipId: 'task-chart-tooltip',
+      valueGetter: function (point) { return point.scraped_items; },
+      tooltipLabel: '抓取量',
+      tooltipValue: function (point) { return point.scraped_items; },
+      axisFormatter: function (value) { return value; },
+      paddingLeft: 64
+    });
+
+    renderChart({
+      svgId: 'duration-chart',
+      emptyId: 'duration-chart-empty',
+      tooltipId: 'duration-chart-tooltip',
+      valueGetter: function (point) { return point.duration_seconds; },
+      tooltipLabel: '任务用时',
+      tooltipValue: function (point) { return point.duration_text || 'N/A'; },
+      axisFormatter: function (value) { return getAxisDurationText(value); },
+      paddingLeft: 96
+    });
+
+    function renderCoverageChart() {
+      if (!coveragePoints.length) {
+        return;
+      }
+      var pointsBackup = points;
+      points = coveragePoints;
+      renderChart({
+        svgId: 'coverage-chart',
+        emptyId: 'coverage-chart-empty',
+        tooltipId: 'coverage-chart-tooltip',
+        valueGetter: function (point) { return point.coverage_rate; },
+        tooltipLabel: '抓全率',
+        tooltipValue: function (point) {
+          return point.coverage_rate_text + '（' + point.items_nums + '/' + point.total_nums + '）';
+        },
+        axisFormatter: function (value) { return value + '%'; },
+        paddingLeft: 80
+      });
+      points = pointsBackup;
+    }
+
+    renderCoverageChart();
+  })();
+  </script>
+</body>
+</html>
