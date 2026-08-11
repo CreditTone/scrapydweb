@@ -20,6 +20,14 @@
     text-align: left;
     width: 200px;
   }
+  /* Keep long timer task names visible instead of truncating them. */
+  .task-name-cell .cell {
+    white-space: normal;
+    word-break: break-word;
+    overflow: visible;
+    text-overflow: clip;
+    line-height: 1.4;
+  }
   </style>
 {% endblock %}
 
@@ -113,7 +121,7 @@ window.onload = function(){
     </el-table-column>
 
     <el-table-column prop="id" label="Task #" fixed sortable align="center" width="75"></el-table-column>
-    <el-table-column prop="name" label="Name" fixed sortable show-overflow-tooltip align="center" width="100"></el-table-column>
+    <el-table-column prop="name" label="Name" fixed sortable class-name="task-name-cell" align="left" width="220"></el-table-column>
     <el-table-column prop="project" label="Project" fixed sortable show-overflow-tooltip align="center" width="150"></el-table-column>
     <el-table-column prop="spider" label="Spider" fixed sortable show-overflow-tooltip align="center" width="150"></el-table-column>
     <!-- default-sort would cause background color of the buttons flash once -->
