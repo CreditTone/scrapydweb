@@ -28,6 +28,20 @@
     text-overflow: clip;
     line-height: 1.4;
   }
+  .spider-name-cell .cell {
+    white-space: normal;
+    word-break: break-word;
+    overflow: visible;
+    text-overflow: clip;
+    line-height: 1.4;
+  }
+  .project-name-cell .cell {
+    white-space: normal;
+    word-break: break-word;
+    overflow: visible;
+    text-overflow: clip;
+    line-height: 1.4;
+  }
   </style>
 {% endblock %}
 
@@ -122,8 +136,8 @@ window.onload = function(){
 
     <el-table-column prop="id" label="Task #" fixed sortable align="center" width="75"></el-table-column>
     <el-table-column prop="name" label="Name" sortable class-name="task-name-cell" align="left" min-width="220"></el-table-column>
-    <el-table-column prop="project" label="Project" fixed sortable show-overflow-tooltip align="center" width="150"></el-table-column>
-    <el-table-column prop="spider" label="Spider" fixed sortable show-overflow-tooltip align="center" width="150"></el-table-column>
+    <el-table-column prop="project" label="Project" sortable class-name="project-name-cell" align="left" min-width="220"></el-table-column>
+    <el-table-column prop="spider" label="Spider" sortable class-name="spider-name-cell" align="left" min-width="220"></el-table-column>
     <!-- default-sort would cause background color of the buttons flash once -->
     <el-table-column prop="status" label="Status" fixed sortable :sort-orders="sortOrders" align="center" :sort-by=['status','id'] width="85">
       <template slot-scope="scope">
