@@ -1896,6 +1896,48 @@ def get_daily_timer_status(selected_date, fire_times, aggregate_row):
     return '未到执行时间', 'normal'
 
 
+def build_timer_period_sources(task_rows, job_states, aggregate_map, period_start, period_end):
+    """Combine recorded execution facts with current scheduler state.
+
+    Aggregate facts remain visible even after a task is paused, disabled, or
+    removed from APScheduler. Scheduler state is only used to add enabled tasks
+    that were expected to run but have no execution fact yet.
+    """
+    task_map = dict(
+        (build_task_key('timer', task.get('id'), task.get('spider')), task)
+        for task in task_rows
+    )
+    sources = []
+    rendered = set()
+    for task_key, aggregate_row in aggregate_map.items():
+        if aggregate_row.get('source_type') != 'timer':
+            continue
+        task = task_map.get(task_key)
+        task_id = aggregate_row.get('task_id') or (task.get('id') if task else None)
+        state = job_states.get(str(task_id)) if task_id is not None else None
+        trigger = state.get('trigger') if state else None
+        fire_times = get_fire_times_between(trigger, period_start, period_end) if trigger else []
+        sources.append(dict(
+            task_key=task_key, task=task, aggregate_row=aggregate_row,
+            fire_times=fire_times,
+            should_execute=(len(fire_times) if trigger else aggregate_row.get('should_execute', 0)),
+        ))
+        rendered.add(task_key)
+    for task in task_rows:
+        task_key = build_task_key('timer', task.get('id'), task.get('spider'))
+        if task_key in rendered:
+            continue
+        state = job_states.get(str(task.get('id')))
+        if not state or state.get('next_run_time') is None:
+            continue
+        trigger = state.get('trigger')
+        fire_times = get_fire_times_between(trigger, period_start, period_end) if trigger else []
+        if fire_times:
+            sources.append(dict(task_key=task_key, task=task, aggregate_row=None,
+                                fire_times=fire_times, should_execute=len(fire_times)))
+    return sources
+
+
 def build_daily_report(selected_date):
     day_start = selected_date.replace(hour=0, minute=0, second=0, microsecond=0)
     day_end = day_start + timedelta(days=1)
@@ -1907,28 +1949,24 @@ def build_daily_report(selected_date):
     carryover_rows = load_cross_day_running_rows(day_start, day_end, spider_name_map=spider_name_map)
 
     timer_rows = []
-    for task in task_rows:
-        if is_excluded_report_spider(task.get('spider')):
+    timer_sources = build_timer_period_sources(task_rows, job_states, daily_agg_map, day_start, day_end)
+    for source in timer_sources:
+        task = source['task'] or {}
+        aggregate_row = source['aggregate_row']
+        spider = (aggregate_row or {}).get('spider') or task.get('spider')
+        if is_excluded_report_spider(spider):
             continue
-        job_state = job_states.get(str(task['id']))
-        if not job_state or job_state['next_run_time'] is None:
-            continue
-        trigger = job_state.get('trigger')
-        fire_times = get_fire_times_by_day(trigger, day_start, day_end) if trigger else []
-        task_key = build_task_key('timer', task['id'], task['spider'])
-        aggregate_row = daily_agg_map.get(task_key)
-        should_execute = len(fire_times)
-        if should_execute == 0 and not aggregate_row:
-            continue
+        fire_times = source['fire_times']
+        should_execute = source['should_execute']
         status_text, status_class = get_daily_timer_status(selected_date, fire_times, aggregate_row)
         timer_rows.append(dict(
             name=resolve_display_name(
-                task['spider'],
-                project=task.get('project'),
-                fallback_name=(aggregate_row.get('task_name') if aggregate_row else None) or task.get('name'),
+                spider,
+                project=(aggregate_row or {}).get('project') or task.get('project'),
+                fallback_name=(aggregate_row or {}).get('task_name') or task.get('name'),
                 spider_name_map=spider_name_map,
             ),
-            spider=task['spider'],
+            spider=spider,
             should_execute=should_execute,
             actual_execute=aggregate_row.get('actual_execute', 0) if aggregate_row else 0,
             success_count=aggregate_row.get('success_count', 0) if aggregate_row else 0,
@@ -2189,20 +2227,16 @@ def build_weekly_report(selected_date):
     rows = []
     total_success_count = 0
     total_actual_execute = 0
-    for task in task_rows:
-        if is_excluded_report_spider(task.get('spider')):
+    timer_sources = build_timer_period_sources(task_rows, job_states, current_agg_map, week_start, should_execute_end)
+    for source in timer_sources:
+        task = source['task'] or {}
+        current_row = source['aggregate_row'] or {}
+        task_key = source['task_key']
+        spider = current_row.get('spider') or task.get('spider')
+        if is_excluded_report_spider(spider):
             continue
-        job_state = job_states.get(str(task['id']))
-        if not job_state:
-            continue
-        if job_state['next_run_time'] is None:
-            continue
-        trigger = job_state.get('trigger') if job_state else None
-        current_fire_times = get_fire_times_between(trigger, week_start, should_execute_end) if trigger else []
-        task_key = build_task_key('timer', task['id'], task['spider'])
-        current_row = current_agg_map.get(task_key, {})
         previous_row = previous_agg_map.get(task_key, {})
-        should_execute = len(current_fire_times)
+        should_execute = source['should_execute']
         actual_execute = current_row.get('actual_execute', 0)
 
         if should_execute == 0 and actual_execute == 0:
@@ -2217,12 +2251,12 @@ def build_weekly_report(selected_date):
         rows.append(dict(
             task_key=task_key,
             name=resolve_display_name(
-                task['spider'],
-                project=task.get('project'),
-                fallback_name=current_row.get('task_name') or task.get('name') or 'task #%s' % task['id'],
+                spider,
+                project=current_row.get('project') or task.get('project'),
+                fallback_name=current_row.get('task_name') or task.get('name') or 'task #%s' % (task.get('id') or '?'),
                 spider_name_map=spider_name_map,
             ),
-            spider=task['spider'],
+            spider=spider,
             run_type='定时',
             should_execute=should_execute,
             actual_execute=actual_execute,
@@ -2519,18 +2553,16 @@ def build_annual_report(selected_date):
     total_success_count = 0
     total_actual_execute = 0
 
-    for task in task_rows:
-        if is_excluded_report_spider(task.get('spider')):
+    timer_sources = build_timer_period_sources(task_rows, job_states, current_agg_map, year_start, actual_period_end)
+    for source in timer_sources:
+        task = source['task'] or {}
+        current_row = source['aggregate_row'] or {}
+        task_key = source['task_key']
+        spider = current_row.get('spider') or task.get('spider')
+        if is_excluded_report_spider(spider):
             continue
-        job_state = job_states.get(str(task['id']))
-        if not job_state or job_state['next_run_time'] is None:
-            continue
-        trigger = job_state.get('trigger')
-        current_fire_times = get_fire_times_between(trigger, year_start, actual_period_end) if trigger else []
-        task_key = build_task_key('timer', task['id'], task['spider'])
-        current_row = current_agg_map.get(task_key, {})
         previous_row = previous_agg_map.get(task_key, {})
-        should_execute = len(current_fire_times)
+        should_execute = source['should_execute']
         actual_execute = current_row.get('actual_execute', 0)
 
         if should_execute == 0 and actual_execute == 0:
@@ -2547,12 +2579,12 @@ def build_annual_report(selected_date):
         rows.append(dict(
             task_key=task_key,
             name=resolve_display_name(
-                task['spider'],
-                project=task.get('project'),
-                fallback_name=current_row.get('task_name') or task.get('name') or 'task #%s' % task['id'],
+                spider,
+                project=current_row.get('project') or task.get('project'),
+                fallback_name=current_row.get('task_name') or task.get('name') or 'task #%s' % (task.get('id') or '?'),
                 spider_name_map=spider_name_map,
             ),
-            spider=task['spider'],
+            spider=spider,
             run_type='定时',
             should_execute=should_execute,
             actual_execute=actual_execute,
