@@ -302,7 +302,6 @@
       </p>
 
       <form class="toolbar" method="get" action="{{ url_for('daily_stats.daily_stats') }}">
-        <a class="button normal" href="{{ url_for('index', node=1) }}">返回 ScrapydWeb</a>
         <label>查询日期</label>
         <input type="date" name="date" value="{{ selected_date }}">
         <button class="button safe" type="submit">查询</button>
@@ -314,6 +313,7 @@
         {% if not is_today %}
         <a class="button normal" href="{{ url_for('daily_stats.daily_stats') }}">回到今天</a>
         {% endif %}
+        <a class="button normal" href="{{ url_for('index', node=1) }}">返回 ScrapydWeb</a>
       </form>
 
       <div class="summary-grid">
