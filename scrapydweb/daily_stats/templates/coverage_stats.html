@@ -251,6 +251,7 @@
       <p class="muted">当前只读数据源：<code>{{ database_dir }}</code>，配置文件：<code>{{ settings_path }}</code>，状态库：<code>{{ status_db_path }}</code></p>
 
       <div class="toolbar">
+        <a class="button normal" href="{{ url_for('index', node=1) }}">返回 ScrapydWeb</a>
         <a class="button normal" href="{{ url_for('daily_stats.daily_stats') }}">任务日报</a>
         <a class="button normal" href="{{ url_for('daily_stats.weekly_stats') }}">任务周报</a>
         <a class="button normal" href="{{ url_for('daily_stats.annual_stats') }}">任务年报</a>

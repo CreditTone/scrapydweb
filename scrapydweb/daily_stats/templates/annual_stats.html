@@ -290,6 +290,7 @@
       <p class="muted">当前只读数据源：<code>{{ database_dir }}</code>，配置文件：<code>{{ settings_path }}</code>，状态库：<code>{{ status_db_path }}</code></p>
 
       <form class="toolbar" method="get" action="{{ url_for('daily_stats.annual_stats') }}">
+        <a class="button normal" href="{{ url_for('index', node=1) }}">返回 ScrapydWeb</a>
         <label>年参考日期</label>
         <input type="date" name="date" value="{{ selected_date }}">
         <button class="button safe" type="submit">查询</button>

@@ -310,6 +310,7 @@
           <p class="subtitle">爬虫 {{ summary.spider }}，{% if summary.query_mode == 'range' %}按日期区间展示{% else %}展示最近 100 次执行{% endif %}，预期执行间隔 {{ summary.expected_interval_text }}，更新时间 {{ now }}</p>
           <p class="subtitle" style="margin-top:6px;">用于观察网站数据波动情况。</p>
         </div>
+        <a class="button normal" href="{{ url_for('index', node=1) }}">返回 ScrapydWeb</a>
         <a class="button" href="{{ url_for('daily_stats.weekly_stats') }}">返回任务周报</a>
       </div>
 
