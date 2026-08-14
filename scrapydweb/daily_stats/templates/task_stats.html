@@ -311,7 +311,7 @@
           <p class="subtitle" style="margin-top:6px;">用于观察网站数据波动情况。</p>
         </div>
         <a class="button" href="{{ url_for('daily_stats.weekly_stats') }}">返回任务周报</a>
-        <a class="button normal" href="{{ url_for('index', node=1) }}">返回 ScrapydWeb</a>
+        <a class="button normal" style="margin-left:auto;" href="{{ url_for('index', node=1) }}">返回 ScrapydWeb</a>
       </div>
 
       <form class="toolbar" method="get" action="{{ url_for('daily_stats.task_stats') }}">
