@@ -66,6 +66,11 @@ def main():
     # https://stackoverflow.com/questions/34164464/flask-decorate-every-route-at-once
     @app.before_request
     def require_login():
+        # Daily statistics is also consumed by SpiderMonitor callbacks and
+        # external dashboards. Keep the whole statistics blueprint public,
+        # while retaining Basic Auth for the ScrapydWeb management UI.
+        if request.blueprint == 'daily_stats':
+            return None
         if app.config.get('ENABLE_AUTH', False):
             auth = request.authorization
             USERNAME = str(app.config.get('USERNAME', ''))  # May be 0 from config file
