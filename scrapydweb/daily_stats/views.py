@@ -2910,6 +2910,120 @@ def annual_stats_scraped_totals():
     return jsonify(build_rows_scraped_totals_payload(rows))
 
 
+@bp.route('/api/task-status')
+def task_status():
+    """Return the completion status for a job id.
+
+    ``finish_time`` is treated as authoritative for completion.  This is
+    intentional because imported/older records can retain ``status=running``
+    even though the close event populated ``finish_time``.
+    """
+    job_id = request.args.get('job_id', '').strip()
+    if not job_id:
+        return jsonify({'status': 'error', 'message': 'job_id is required'}), 400
+
+    ensure_status_db()
+    conn = connect_readonly(DAILY_STATS_DB)
+    try:
+        rows = conn.execute(
+            '''
+            SELECT fact_id, source_type, source_pk, task_key, task_id,
+                   task_name, project, spider, job_id, server, planned_time,
+                   start_time, finish_time, run_date, status, scraped_items,
+                   failure_reason, updated_at
+            FROM task_execution_fact
+            WHERE job_id = ?
+            ORDER BY fact_id
+            ''',
+            (job_id,),
+        ).fetchall()
+    finally:
+        conn.close()
+
+    if not rows:
+        return jsonify({
+            'status': 'not_found',
+            'job_id': job_id,
+            'completed': False,
+            'message': 'job not found',
+        }), 404
+
+    terminal_statuses = {'success', 'failed', 'failure', 'cancelled', 'canceled', 'finished', 'stopped'}
+    records = []
+    for row in rows:
+        item = dict(row)
+        raw_status = (item.get('status') or '').strip().lower()
+        completed = bool(item.get('finish_time')) or raw_status in terminal_statuses
+        item['raw_status'] = item.get('status')
+        item['effective_status'] = raw_status if raw_status in terminal_statuses else ('completed' if item.get('finish_time') else 'running')
+        item['completed'] = completed
+        records.append(item)
+
+    completed = all(item['completed'] for item in records)
+    effective_statuses = {item['effective_status'] for item in records}
+    overall_status = next(iter(effective_statuses)) if len(effective_statuses) == 1 else ('completed' if completed else 'running')
+    return jsonify({
+        'status': 'ok',
+        'job_id': job_id,
+        'completed': completed,
+        'effective_status': overall_status,
+        'record_count': len(records),
+        'records': records,
+    })
+
+
+@bp.route('/api/spider-tasks')
+def spider_tasks():
+    """Return recent execution details for a spider name."""
+    spider_name = (request.args.get('spider_name') or request.args.get('spider') or '').strip()
+    if not spider_name:
+        return jsonify({'status': 'error', 'message': 'spider_name is required'}), 400
+    try:
+        limit = int(request.args.get('limit', '100'))
+    except ValueError:
+        return jsonify({'status': 'error', 'message': 'limit must be an integer'}), 400
+    limit = max(1, min(limit, 1000))
+
+    ensure_status_db()
+    conn = connect_readonly(DAILY_STATS_DB)
+    try:
+        rows = conn.execute(
+            '''
+            SELECT fact_id, source_type, source_pk, task_key, task_id,
+                   task_name, project, spider, job_id, server, node,
+                   planned_time, start_time, finish_time, run_date,
+                   status, scraped_items, failure_reason, is_timer_child,
+                   created_at, updated_at
+            FROM task_execution_fact
+            WHERE spider = ?
+            ORDER BY COALESCE(start_time, planned_time, created_at) DESC,
+                     fact_id DESC
+            LIMIT ?
+            ''',
+            (spider_name, limit),
+        ).fetchall()
+    finally:
+        conn.close()
+
+    terminal_statuses = {'success', 'failed', 'failure', 'cancelled', 'canceled', 'finished', 'stopped'}
+    tasks = []
+    for row in rows:
+        item = dict(row)
+        raw_status = (item.get('status') or '').strip().lower()
+        item['raw_status'] = item.get('status')
+        item['completed'] = bool(item.get('finish_time')) or raw_status in terminal_statuses
+        item['effective_status'] = raw_status if raw_status in terminal_statuses else ('completed' if item.get('finish_time') else 'running')
+        tasks.append(item)
+
+    return jsonify({
+        'status': 'ok',
+        'spider_name': spider_name,
+        'count': len(tasks),
+        'limit': limit,
+        'tasks': tasks,
+    })
+
+
 @bp.route('/api/spider-monitor/coverage', methods=['POST'])
 def spider_monitor_coverage():
     payload = request.get_json(silent=True)
