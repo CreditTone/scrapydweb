@@ -9,6 +9,7 @@ from ..baseview import BaseView
 
 
 DEFAULT_UPLOAD_DIR = os.environ.get('SCRAPYDWEB_UPLOAD_DIR', '/data/nfs/upload')
+DEFAULT_UPLOAD_PUBLIC_BASE_URL = os.environ.get('SCRAPYDWEB_UPLOAD_PUBLIC_BASE_URL', 'http://10.20.8.116/nfs/upload')
 
 
 class UploadFilesView(BaseView):
@@ -92,5 +93,6 @@ class UploadFilesView(BaseView):
         return dict(
             node=self.node,
             upload_dir=self.upload_dir,
+            upload_public_base_url=DEFAULT_UPLOAD_PUBLIC_BASE_URL.rstrip('/'),
             rows=rows[:100],
         )
