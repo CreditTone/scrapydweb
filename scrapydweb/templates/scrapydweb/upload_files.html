@@ -74,13 +74,19 @@
 <script>
 function copyUploadUrl(url) {
   if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(url).then(function() {
-      alert('已复制: ' + url);
-    }, function() {
-      prompt('复制下面的链接：', url);
-    });
+    navigator.clipboard.writeText(url).catch(function() {});
   } else {
-    prompt('复制下面的链接：', url);
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.value = url;
+    input.style.position = 'fixed';
+    input.style.opacity = '0';
+    document.body.appendChild(input);
+    input.select();
+    try {
+      document.execCommand('copy');
+    } catch (err) {}
+    document.body.removeChild(input);
   }
 }
 </script>
