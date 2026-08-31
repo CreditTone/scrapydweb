@@ -5,6 +5,14 @@
 {% block head %}
   <style>
   .collapse h4 {line-height: 55px;}
+  .settings-form {padding: 16px 20px 20px;}
+  .settings-form .row {display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 12px;}
+  .settings-form label {display: flex; flex-direction: column; min-width: 220px; font-size: 14px;}
+  .settings-form input[type="text"],
+  .settings-form input[type="number"] {margin-top: 6px; padding: 8px; border: 1px solid #dcdfe6; border-radius: 4px;}
+  .settings-form .actions {display: flex; gap: 12px; margin-top: 12px;}
+  .settings-form button {padding: 8px 16px; border: none; border-radius: 4px; background: #409EFF; color: #fff; cursor: pointer;}
+  .settings-form button.secondary {background: #67C23A;}
   </style>
 {% endblock %}
 
@@ -103,6 +111,66 @@
         <li><div class="title"><h4>CHECK_TASK_RESULT_INTERVAL = {{ CHECK_TASK_RESULT_INTERVAL }}</h4></div></li>
         <li><div class="title"><h4>KEEP_TASK_RESULT_LIMIT = {{ KEEP_TASK_RESULT_LIMIT }}</h4></div></li>
         <li><div class="title"><h4>KEEP_TASK_RESULT_WITHIN_DAYS = {{ KEEP_TASK_RESULT_WITHIN_DAYS }}</h4></div></li>
+      </ul>
+    </div>
+
+    <div class="wrap collapse-wrap">
+      <h3>Log Cleanup</h3>
+      <ul class="collapse">
+        <li><div class="title"><h4>next_run_time: {{ log_cleanup_next_run_time }}</h4></div></li>
+        <li>
+          <div class="title"><h4>config path</h4><i class="iconfont icon-right"></i></div>
+          <pre>{{ log_cleanup_config_path }}</pre>
+        </li>
+        <li>
+          <div class="title"><h4>status path</h4><i class="iconfont icon-right"></i></div>
+          <pre>{{ log_cleanup_status_path }}</pre>
+        </li>
+        <li>
+          <div class="title"><h4>current config</h4><i class="iconfont icon-right"></i></div>
+          <pre>{{ log_cleanup_config_display }}</pre>
+        </li>
+        <li>
+          <div class="title"><h4>last run status</h4><i class="iconfont icon-right"></i></div>
+          <pre>{{ log_cleanup_status_display }}</pre>
+        </li>
+        <li class="active">
+          <div class="title"><h4>edit config</h4><i class="iconfont icon-right"></i></div>
+          <div class="settings-form">
+            <form method="post" action="{{ url_for('settings', node=node) }}">
+              <div class="row">
+                <label>
+                  日志目录
+                  <input type="text" name="log_dir" value="{{ log_cleanup_config.log_dir }}" placeholder="/root/scrapyd/logs">
+                </label>
+              </div>
+              <div class="row">
+                <label>
+                  超过多少 MB 才清理
+                  <input type="number" min="0" name="size_mb" value="{{ log_cleanup_config.size_mb }}">
+                </label>
+                <label>
+                  保留多少天
+                  <input type="number" min="0" name="keep_days" value="{{ log_cleanup_config.keep_days }}">
+                </label>
+                <label>
+                  每隔多少小时执行一次
+                  <input type="number" min="1" name="interval_hours" value="{{ log_cleanup_config.interval_hours }}">
+                </label>
+              </div>
+              <div class="row">
+                <label style="min-width: 120px; flex-direction: row; align-items: center; gap: 8px;">
+                  <input type="checkbox" name="enabled" {% if log_cleanup_config.enabled %}checked{% endif %}>
+                  启用定期清理
+                </label>
+              </div>
+              <div class="actions">
+                <button type="submit" name="action" value="save_log_cleanup">保存配置</button>
+                <button class="secondary" type="submit" name="action" value="run_log_cleanup_now">保存并立即执行一次</button>
+              </div>
+            </form>
+          </div>
+        </li>
       </ul>
     </div>
 

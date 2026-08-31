@@ -2,16 +2,18 @@
 from collections import OrderedDict, defaultdict
 import re
 
-from flask import render_template
+from flask import flash, redirect, render_template, request, url_for
 from logparser import SETTINGS_PY_PATH as LOGPARSER_SETTINGS_PY_PATH
 
 from ...common import json_dumps
+from ...utils.log_cleanup import cleanup_logs, refresh_log_cleanup_job, save_log_cleanup_config
 from ...vars import SCHEDULER_STATE_DICT
 from ..baseview import BaseView
+from .log_cleanup import get_log_cleanup_view_data
 
 
 class SettingsView(BaseView):
-    methods = ['GET']
+    methods = ['GET', 'POST']
 
     def __init__(self):
         super(SettingsView, self).__init__()
@@ -20,8 +22,27 @@ class SettingsView(BaseView):
         self.kwargs = dict(node=self.node)
 
     def dispatch_request(self, **kwargs):
+        if request.method == 'POST':
+            self.handle_post()
+            return redirect(url_for('settings', node=self.node))
         self.update_kwargs()
         return render_template(self.template, **self.kwargs)
+
+    def handle_post(self):
+        action = (request.form.get('action') or 'save_log_cleanup').strip()
+        data = dict(
+            enabled=request.form.get('enabled') == 'on',
+            log_dir=(request.form.get('log_dir') or '').strip(),
+            size_mb=request.form.get('size_mb', '').strip(),
+            keep_days=request.form.get('keep_days', '').strip(),
+            interval_hours=request.form.get('interval_hours', '').strip(),
+        )
+        config = save_log_cleanup_config(data, default_log_dir=self.LOCAL_SCRAPYD_LOGS_DIR)
+        refresh_log_cleanup_job(default_log_dir=self.LOCAL_SCRAPYD_LOGS_DIR)
+        flash('日志清理配置已保存', 'info')
+        if action == 'run_log_cleanup_now':
+            result = cleanup_logs(config=config, default_log_dir=self.LOCAL_SCRAPYD_LOGS_DIR)
+            flash('日志清理已执行：%s' % result.get('message', ''), 'info')
 
     @staticmethod
     def json_dumps(obj, sort_keys=False):
@@ -91,6 +112,13 @@ class SettingsView(BaseView):
         self.kwargs['logparser_version'] = self.LOGPARSER_VERSION
         self.kwargs['logparser_settings_py_path'] = self.handle_slash(LOGPARSER_SETTINGS_PY_PATH)
         self.kwargs['BACKUP_STATS_JSON_FILE'] = self.BACKUP_STATS_JSON_FILE
+
+        # Log cleanup
+        self.kwargs.update(get_log_cleanup_view_data(default_log_dir=self.LOCAL_SCRAPYD_LOGS_DIR))
+        self.kwargs['log_cleanup_config_display'] = self.json_dumps(self.kwargs['log_cleanup_config'])
+        self.kwargs['log_cleanup_status_display'] = self.json_dumps(self.kwargs['log_cleanup_status'])
+        job = self.scheduler.get_job('log_cleanup_job')
+        self.kwargs['log_cleanup_next_run_time'] = self.remove_microsecond(job.next_run_time) if job and job.next_run_time else self.NA
 
         # Timer Tasks
         self.kwargs['scheduler_state'] = SCHEDULER_STATE_DICT[self.scheduler.state]

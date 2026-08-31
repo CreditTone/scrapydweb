@@ -14,6 +14,7 @@ from scrapydweb.__version__ import __description__, __version__
 from scrapydweb.common import authenticate, find_scrapydweb_settings_py, handle_metadata, handle_slash
 from scrapydweb.vars import ROOT_DIR, SCRAPYDWEB_SETTINGS_PY, SCHEDULER_STATE_DICT, STATE_PAUSED, STATE_RUNNING
 from scrapydweb.utils.check_app_config import check_app_config
+from scrapydweb.utils.log_cleanup import refresh_log_cleanup_job
 
 
 logger = logging.getLogger(__name__)
@@ -46,6 +47,8 @@ def main():
         logger.error("Check app config fail: ")
         sys.exit(u"\n{err}\n\nCheck and update your settings in {path}\n".format(
                  err=err, path=handle_slash(app.config['SCRAPYDWEB_SETTINGS_PY_PATH'])))
+
+    refresh_log_cleanup_job(default_log_dir=app.config.get('LOCAL_SCRAPYD_LOGS_DIR', ''))
 
     if app.config.get('ENABLE_DAILY_STATS', True):
         from scrapydweb.daily_stats.common import configure, validate_scrapydweb_schema
