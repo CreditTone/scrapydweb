@@ -274,6 +274,9 @@ def handle_route(app):
     from .views.utilities.parse import bp as bp_parse_source
     app.register_blueprint(bp_parse_source)
 
+    from .views.utilities.upload_files import UploadFilesView
+    register_view(UploadFilesView, 'uploadfiles', [('upload/files', None)])
+
     # Send text
     from .views.utilities.send_text import SendTextView, SendTextApiView
     register_view(SendTextView, 'sendtext', [('sendtext', None)])

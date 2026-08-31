@@ -377,6 +377,7 @@ class BaseView(View):
             g.url_menu_items = url_for('items', node=self.node)
             g.url_menu_sendtext = url_for('sendtext', node=self.node)
             g.url_menu_parse = url_for('parse.upload', node=self.node)
+            g.url_menu_uploadfiles = url_for('uploadfiles', node=self.node)
             g.url_menu_settings = url_for('settings', node=self.node)
             g.url_menu_mobileui = url_for('index', node=self.node, ui='mobile')
             g.scheduler_state_paused = self.scheduler.state == STATE_PAUSED and self.any_running_apscheduler_jobs

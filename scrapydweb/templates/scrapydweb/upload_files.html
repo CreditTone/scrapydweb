@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block title %}upload files{% endblock %}
+
+{% block head %}
+  <style>
+  .upload-panel {background: #fff; border-radius: 8px; padding: 20px; margin-bottom: 20px;}
+  .upload-panel h2 {margin-top: 0;}
+  .upload-panel input[type="file"] {margin: 12px 0;}
+  .upload-panel button {padding: 8px 16px; border: none; border-radius: 4px; background: #409EFF; color: #fff; cursor: pointer;}
+  .upload-table {width: 100%; border-collapse: collapse; background: #fff;}
+  .upload-table th, .upload-table td {padding: 10px 12px; border-bottom: 1px solid #ebeef5; text-align: left;}
+  .upload-table th {background: #f5f7fa;}
+  .path {word-break: break-all;}
+  </style>
+{% endblock %}
+
+{% block body %}
+<div class="upload-panel">
+  <h2>文件上传</h2>
+  <p>上传目录：<code>{{ upload_dir }}</code></p>
+  <form method="post" action="{{ url_for('uploadfiles', node=node) }}" enctype="multipart/form-data">
+    <input type="file" name="files" multiple>
+    <br>
+    <button type="submit">上传</button>
+  </form>
+</div>
+
+<div class="upload-panel">
+  <h2>最近文件</h2>
+  <table class="upload-table">
+    <thead>
+      <tr>
+        <th>文件名</th>
+        <th>大小(字节)</th>
+        <th>修改时间</th>
+        <th>路径</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td>{{ row.name }}</td>
+        <td>{{ row.size }}</td>
+        <td>{{ row.mtime }}</td>
+        <td class="path">{{ row.path }}</td>
+      </tr>
+      {% endfor %}
+      {% if not rows %}
+      <tr>
+        <td colspan="4">暂无文件</td>
+      </tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+
