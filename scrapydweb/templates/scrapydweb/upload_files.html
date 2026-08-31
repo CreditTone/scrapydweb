@@ -12,6 +12,8 @@
   .upload-table th, .upload-table td {padding: 10px 12px; border-bottom: 1px solid #ebeef5; text-align: left;}
   .upload-table th {background: #f5f7fa;}
   .path {word-break: break-all;}
+  .upload-table form {margin: 0;}
+  .upload-table button {padding: 6px 12px; border: none; border-radius: 4px; background: #F56C6C; color: #fff; cursor: pointer;}
   </style>
 {% endblock %}
 
@@ -35,6 +37,7 @@
         <th>大小(字节)</th>
         <th>修改时间</th>
         <th>路径</th>
+        <th>操作</th>
       </tr>
     </thead>
     <tbody>
@@ -44,15 +47,21 @@
         <td>{{ row.size }}</td>
         <td>{{ row.mtime }}</td>
         <td class="path">{{ row.path }}</td>
+        <td>
+          <form method="post" action="{{ url_for('uploadfiles', node=node) }}" onsubmit="return confirm('确认删除 {{ row.name }} ?');">
+            <input type="hidden" name="action" value="delete">
+            <input type="hidden" name="filename" value="{{ row.name }}">
+            <button type="submit">删除</button>
+          </form>
+        </td>
       </tr>
       {% endfor %}
       {% if not rows %}
       <tr>
-        <td colspan="4">暂无文件</td>
+        <td colspan="5">暂无文件</td>
       </tr>
       {% endif %}
     </tbody>
   </table>
 </div>
 {% endblock %}
-

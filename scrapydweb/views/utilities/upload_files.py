@@ -21,7 +21,11 @@ class UploadFilesView(BaseView):
 
     def dispatch_request(self, **kwargs):
         if request.method == 'POST':
-            self.handle_upload()
+            action = (request.form.get('action') or 'upload').strip()
+            if action == 'delete':
+                self.handle_delete()
+            else:
+                self.handle_upload()
             return redirect(url_for('uploadfiles', node=self.node))
         return render_template(self.template, **self.build_kwargs())
 
@@ -44,6 +48,23 @@ class UploadFilesView(BaseView):
 
         if saved == 0:
             flash('未找到可上传文件', self.WARN)
+
+    def handle_delete(self):
+        filename = (request.form.get('filename') or '').strip()
+        if not filename:
+            flash('缺少 filename', self.WARN)
+            return
+
+        target = os.path.abspath(os.path.join(self.upload_dir, filename))
+        if not target.startswith(self.upload_dir.rstrip(os.sep) + os.sep):
+            flash('非法文件路径', self.WARN)
+            return
+        if not os.path.isfile(target):
+            flash('文件不存在：%s' % target, self.WARN)
+            return
+
+        os.remove(target)
+        flash('已删除：%s' % target, self.INFO)
 
     def get_available_path(self, filename):
         base, ext = os.path.splitext(filename)
@@ -73,4 +94,3 @@ class UploadFilesView(BaseView):
             upload_dir=self.upload_dir,
             rows=rows[:100],
         )
-
