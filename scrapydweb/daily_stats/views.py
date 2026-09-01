@@ -820,6 +820,8 @@ def load_task_recent_execution_stats(spider, limit=100, start_date=None, end_dat
 
     for index, record in enumerate(rows, start=1):
         scraped_items = normalize_optional_int(record.get('scraped_items'))
+        if scraped_items == 0:
+            continue
         start_time_text = format_datetime(record.get('start_time'))
         finish_time_text = format_datetime(record.get('finish_time'))
         duration_seconds = get_duration_seconds(start_time_text, finish_time_text)
