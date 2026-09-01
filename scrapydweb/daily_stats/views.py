@@ -739,7 +739,7 @@ def build_rows_scraped_totals_payload(rows):
     )
 
 
-def load_task_recent_execution_stats(spider, limit=100, start_date=None, end_date=None):
+def load_task_recent_execution_stats(spider, limit=None, start_date=None, end_date=None):
     spider = (spider or '').strip()
     if not spider:
         return None
@@ -756,7 +756,7 @@ def load_task_recent_execution_stats(spider, limit=100, start_date=None, end_dat
         where_clauses.append("COALESCE(start_time, planned_time, finish_time, created_at) < ?")
         params.append((end_date + timedelta(days=1)).strftime('%Y-%m-%d 00:00:00'))
     limit_clause = ''
-    if not start_date and not end_date:
+    if limit and not start_date and not end_date:
         limit_clause = '\n            LIMIT ?'
         params.append(int(limit))
 
@@ -793,24 +793,11 @@ def load_task_recent_execution_stats(spider, limit=100, start_date=None, end_dat
         seen_job_ids.add(job_id)
         deduped_rows.append(record)
     deduped_rows.extend(pending_without_job_id)
-    rows = list(reversed(deduped_rows[:int(limit)]))
-
-    positive_scraped_values = []
-    positive_duration_values = []
-    for record in rows:
-        scraped_items = record.get('scraped_items')
-        if isinstance(scraped_items, int) and scraped_items > 0:
-            positive_scraped_values.append(scraped_items)
-        duration_seconds = get_duration_seconds(
-            format_datetime(record.get('start_time')),
-            format_datetime(record.get('finish_time')),
-        )
-        if isinstance(duration_seconds, int) and duration_seconds > 0:
-            positive_duration_values.append(duration_seconds)
-    baseline_scraped_items = get_median_number(positive_scraped_values)
-    min_allowed_scraped_items = baseline_scraped_items * 0.5
-    baseline_duration_seconds = get_median_number(positive_duration_values)
-    min_allowed_duration_seconds = baseline_duration_seconds * 0.5
+    if limit:
+        rows = deduped_rows[:int(limit)]
+    else:
+        rows = deduped_rows
+    rows = list(reversed(rows))
 
     coverage_point_map = dict(
         (item.get('job_id'), item)
@@ -832,30 +819,21 @@ def load_task_recent_execution_stats(spider, limit=100, start_date=None, end_dat
     min_scraped = None
 
     for index, record in enumerate(rows, start=1):
-        scraped_items = record.get('scraped_items')
-        has_scraped_items = isinstance(scraped_items, int) and scraped_items > 0
-        if not has_scraped_items:
-            continue
-        if baseline_scraped_items > 0 and float(scraped_items) < min_allowed_scraped_items:
-            continue
+        scraped_items = normalize_optional_int(record.get('scraped_items'))
         start_time_text = format_datetime(record.get('start_time'))
         finish_time_text = format_datetime(record.get('finish_time'))
         duration_seconds = get_duration_seconds(start_time_text, finish_time_text)
-        if (
-            baseline_duration_seconds > 0
-            and isinstance(duration_seconds, int)
-            and float(duration_seconds) < min_allowed_duration_seconds
-        ):
-            continue
-        total_scraped += scraped_items
+        if isinstance(scraped_items, int) and scraped_items > 0:
+            total_scraped += scraped_items
         if record.get('status') == 'success':
             success_count += 1
         if record.get('status') == 'running':
             running_count += 1
-        if max_scraped is None or scraped_items > max_scraped:
-            max_scraped = scraped_items
-        if min_scraped is None or scraped_items < min_scraped:
-            min_scraped = scraped_items
+        if isinstance(scraped_items, int):
+            if max_scraped is None or scraped_items > max_scraped:
+                max_scraped = scraped_items
+            if min_scraped is None or scraped_items < min_scraped:
+                min_scraped = scraped_items
 
         display_time = (
             start_time_text
@@ -887,7 +865,7 @@ def load_task_recent_execution_stats(spider, limit=100, start_date=None, end_dat
                 spider, spider_name_map=spider_name_map
             ),
             status=record.get('status') or '-',
-            scraped_items=scraped_items,
+            scraped_items=scraped_items if scraped_items is not None else '-',
             coverage_rate=(
                 coverage_point_map.get(record.get('job_id'), {}).get('coverage_rate_text') or '-'
             ),
@@ -912,23 +890,9 @@ def load_task_recent_execution_stats(spider, limit=100, start_date=None, end_dat
         success_rate=format_percent(success_count, len(executions)),
         max_scraped_items=max_scraped or 0,
         min_scraped_items=min_scraped or 0,
-        baseline_scraped_items='%.1f' % baseline_scraped_items if baseline_scraped_items else '0.0',
-        filter_threshold_scraped_items='%.1f' % min_allowed_scraped_items if baseline_scraped_items else '0.0',
-        baseline_duration=(
-            format_duration_between('2026-01-01 00:00:00', (
-                datetime(2026, 1, 1) + timedelta(seconds=int(baseline_duration_seconds))
-            ).strftime('%Y-%m-%d %H:%M:%S'))
-            if baseline_duration_seconds else '0:00'
-        ),
         expected_interval_seconds=expected_interval['seconds'],
         expected_interval_text=expected_interval['text'],
-        filter_threshold_duration=(
-            format_duration_between('2026-01-01 00:00:00', (
-                datetime(2026, 1, 1) + timedelta(seconds=int(min_allowed_duration_seconds))
-            ).strftime('%Y-%m-%d %H:%M:%S'))
-            if baseline_duration_seconds else '0:00'
-        ),
-        query_mode='range' if (start_date or end_date) else 'recent',
+        query_mode='range' if (start_date or end_date) else 'all',
     )
     return dict(
         summary=summary,
@@ -2836,7 +2800,6 @@ def task_stats():
     end_date = parse_taskstats_date(request.args.get('end_date'))
     payload = load_task_recent_execution_stats(
         spider,
-        limit=100,
         start_date=start_date,
         end_date=end_date,
     )

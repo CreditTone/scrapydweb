@@ -307,7 +307,7 @@
       <div class="header">
         <div>
           <h1 class="title">{{ summary.task_name }}</h1>
-          <p class="subtitle">爬虫 {{ summary.spider }}，{% if summary.query_mode == 'range' %}按日期区间展示{% else %}展示最近 100 次执行{% endif %}，预期执行间隔 {{ summary.expected_interval_text }}，更新时间 {{ now }}</p>
+          <p class="subtitle">爬虫 {{ summary.spider }}，{% if summary.query_mode == 'range' %}按日期区间展示{% else %}展示全部任务执行{% endif %}，预期执行间隔 {{ summary.expected_interval_text }}，更新时间 {{ now }}</p>
           <p class="subtitle" style="margin-top:6px;">用于观察网站数据波动情况。</p>
         </div>
         <a class="button" href="{{ url_for('daily_stats.weekly_stats') }}">返回任务周报</a>
@@ -321,7 +321,7 @@
         <label>结束日期</label>
         <input type="date" name="end_date" value="{{ end_date }}">
         <button class="button" type="submit">查询区间</button>
-        <a class="button" href="{{ url_for('daily_stats.task_stats', spider=summary.spider) }}">回到最近100次</a>
+        <a class="button" href="{{ url_for('daily_stats.task_stats', spider=summary.spider) }}">回到全部任务</a>
       </form>
 
       <div class="summary-grid">
@@ -346,7 +346,7 @@
           <div class="summary-value">{{ summary.min_scraped_items }}</div>
         </div>
       </div>
-      <p style="margin:0 0 16px;color:#909399;font-size:13px;">说明：该页面用于观察网站数据波动情况。图表与表格基于{% if summary.query_mode == 'range' %}当前区间{% else %}最近 100 次原始样本{% endif %}生成，同一 job_id 只保留一条，优先保留爬虫触发记录；抓取数量为空或小于等于 0 的记录不纳入统计。</p>
+      <p style="margin:0 0 16px;color:#909399;font-size:13px;">说明：该页面用于观察网站数据波动情况。图表与表格基于{% if summary.query_mode == 'range' %}当前区间{% else %}全部历史任务{% endif %}生成，同一 job_id 只保留一条，优先保留爬虫触发记录。</p>
 
       <div class="chart-shell">
         <h2 class="chart-title">任务抓取数量曲线</h2>

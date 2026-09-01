@@ -64,7 +64,13 @@
       <template slot-scope="scope"><span :style="{ color: scope.row.pending_color }">{{scope.row.project}}</span></template>
     </el-table-column>
     <el-table-column prop="spider" label="Spider" fixed sortable show-overflow-tooltip align="center" width="150">
-      <template slot-scope="scope"><span :style="{ color: scope.row.pending_color }">{{scope.row.spider}}</span></template>
+      <template slot-scope="scope">
+        <a
+          :href="scope.row.url_taskstats"
+          target="_blank"
+          :style="{ color: scope.row.pending_color, textDecoration: 'underline' }"
+        >{{scope.row.spider}}</a>
+      </template>
     </el-table-column>
     <!-- 'task_123456_2019-01-01T00_00_01' -->
     <el-table-column prop="job" label="Job" fixed sortable show-overflow-tooltip :sort-method="sortJobWithTask" :sort-orders="sortOrders" align="center" width="215">
@@ -166,6 +172,7 @@ var Main = {
         pending_display: {% if job.start %}''{% else %}'none'{% endif %},
         project: '{{ job.project }}',
         spider: '{{ job.spider }}',
+        url_taskstats: '{{ url_for('daily_stats.task_stats') }}?spider={{ job.spider|urlencode }}',
         job: '{{ job.job }}',
         pid: '{{ job.pid }}',
         start: '{{ job.start }}',
