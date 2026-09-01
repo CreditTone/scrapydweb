@@ -739,7 +739,7 @@ def build_rows_scraped_totals_payload(rows):
     )
 
 
-def load_task_recent_execution_stats(spider, limit=None, start_date=None, end_date=None):
+def load_task_recent_execution_stats(spider, limit=100, start_date=None, end_date=None):
     spider = (spider or '').strip()
     if not spider:
         return None
@@ -892,7 +892,7 @@ def load_task_recent_execution_stats(spider, limit=None, start_date=None, end_da
         min_scraped_items=min_scraped or 0,
         expected_interval_seconds=expected_interval['seconds'],
         expected_interval_text=expected_interval['text'],
-        query_mode='range' if (start_date or end_date) else 'all',
+        query_mode='range' if (start_date or end_date) else 'recent',
     )
     return dict(
         summary=summary,
@@ -2800,6 +2800,7 @@ def task_stats():
     end_date = parse_taskstats_date(request.args.get('end_date'))
     payload = load_task_recent_execution_stats(
         spider,
+        limit=100,
         start_date=start_date,
         end_date=end_date,
     )
