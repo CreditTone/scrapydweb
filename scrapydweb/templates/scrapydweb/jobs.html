@@ -66,8 +66,8 @@
     <el-table-column prop="spider" label="Spider" fixed sortable show-overflow-tooltip align="center" width="150">
       <template slot-scope="scope">
         <a
-          :href="scope.row.url_taskstats"
-          target="_blank"
+          href="javascript:void(0);"
+          @click.stop="openTaskStats(scope.row.url_taskstats)"
           :style="{ color: scope.row.pending_color, textDecoration: 'underline' }"
         >{{scope.row.spider}}</a>
       </template>
@@ -230,6 +230,12 @@ var Main = {
       } else {
         jobsXHR(url, forcestop=false);
       }
+    },
+    openTaskStats(url) {
+      if (!url) {
+        return;
+      }
+      window.open(url, '_blank');
     },
     handleCurrentChange(val) {
       console.log(val);
