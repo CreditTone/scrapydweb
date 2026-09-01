@@ -179,6 +179,16 @@ def get_median_number(values):
     return (normalized_values[middle_index - 1] + normalized_values[middle_index]) / 2.0
 
 
+def get_average_number(values):
+    normalized_values = [
+        float(value) for value in values
+        if isinstance(value, (int, float)) and value > 0
+    ]
+    if not normalized_values:
+        return 0.0
+    return sum(normalized_values) / float(len(normalized_values))
+
+
 def format_duration_seconds_text(total_seconds):
     if not isinstance(total_seconds, (int, float)) or total_seconds <= 0:
         return '-'
@@ -799,6 +809,12 @@ def load_task_recent_execution_stats(spider, limit=100, start_date=None, end_dat
         rows = deduped_rows
     rows = list(reversed(rows))
 
+    average_scraped_items = get_average_number([
+        normalize_optional_int(record.get('scraped_items'))
+        for record in rows
+    ])
+    min_allowed_scraped_items = average_scraped_items * 0.1
+
     coverage_point_map = dict(
         (item.get('job_id'), item)
         for item in load_task_recent_coverage_points(
@@ -821,6 +837,12 @@ def load_task_recent_execution_stats(spider, limit=100, start_date=None, end_dat
     for index, record in enumerate(rows, start=1):
         scraped_items = normalize_optional_int(record.get('scraped_items'))
         if scraped_items == 0:
+            continue
+        if (
+            isinstance(scraped_items, int)
+            and average_scraped_items > 0
+            and float(scraped_items) < min_allowed_scraped_items
+        ):
             continue
         start_time_text = format_datetime(record.get('start_time'))
         finish_time_text = format_datetime(record.get('finish_time'))
