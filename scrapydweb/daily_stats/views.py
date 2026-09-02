@@ -1473,6 +1473,7 @@ def load_coverage_report(limit=100):
             status_class = 'danger'
 
         result_rows.append(dict(
+            record_id=record.get('record_id'),
             name=resolve_display_name(
                 record.get('spider_name'),
                 project=record.get('project'),
@@ -2759,6 +2760,61 @@ def coverage_stats():
         settings_path=SETTINGS_PATH,
         status_db_path=DAILY_STATS_DB,
     )
+
+
+@bp.route('/api/coveragestats/update', methods=['POST'])
+def update_coverage_stats_record():
+    payload = request.get_json(silent=True) or request.form
+    record_id = normalize_optional_int((payload or {}).get('record_id'))
+    total_nums = normalize_optional_int((payload or {}).get('total_nums'))
+    items_nums = normalize_optional_int((payload or {}).get('items_nums'))
+
+    if not isinstance(record_id, int) or record_id <= 0:
+        return jsonify(dict(status='error', message='record_id 无效')), 400
+    if total_nums is None or total_nums < 0:
+        return jsonify(dict(status='error', message='预期抓取数必须是大于等于 0 的整数')), 400
+    if items_nums is None or items_nums < 0:
+        return jsonify(dict(status='error', message='抓取数量必须是大于等于 0 的整数')), 400
+
+    updated_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    conn = connect_writable(DAILY_STATS_DB)
+    try:
+        row = conn.execute(
+            '''
+            SELECT record_id, spider_name, job_id, total_nums, items_nums
+            FROM spider_monitor_coverage
+            WHERE record_id = ?
+            ''',
+            (record_id,)
+        ).fetchone()
+        if not row:
+            return jsonify(dict(status='error', message='记录不存在')), 404
+
+        conn.execute(
+            '''
+            UPDATE spider_monitor_coverage
+            SET total_nums = ?, items_nums = ?, updated_at = ?
+            WHERE record_id = ?
+            ''',
+            (total_nums, items_nums, updated_at, record_id)
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    coverage_rate = format_coverage_rate(items_nums, total_nums)
+    return jsonify(dict(
+        status='ok',
+        record_id=record_id,
+        spider=row['spider_name'],
+        job_id=row['job_id'],
+        total_nums=total_nums,
+        items_nums=items_nums,
+        coverage_rate=coverage_rate,
+        rate_class=get_coverage_rate_class(items_nums, total_nums),
+        updated_at=updated_at,
+        message='抓全率已更新',
+    ))
 
 
 @bp.route('/weeklystats/')
