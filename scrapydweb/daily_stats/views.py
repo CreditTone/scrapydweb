@@ -40,7 +40,7 @@ SPIDER_MONITOR_MAIL_TO = os.environ.get(
     'SPIDER_MONITOR_MAIL_TO',
     'js.search_crawler@guazi.com,qinbenyuan@guazi.com,zhangbohao2@guazi.com'
 ).strip()
-DAILY_STATS_PUBLIC_BASE_URL = os.environ.get('DAILY_STATS_PUBLIC_BASE_URL', 'http://10.16.12.155').strip().rstrip('/')
+DAILY_STATS_PUBLIC_BASE_URL = os.environ.get('DAILY_STATS_PUBLIC_BASE_URL', 'http://10.20.8.115/stats').strip().rstrip('/')
 
 
 FAILURE_PATTERNS = (
