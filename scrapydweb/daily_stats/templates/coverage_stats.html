@@ -153,42 +153,76 @@
   .rate.low {
     color: #e6a23c;
   }
-  .inline-input {
-    width: 140px;
-    min-height: 36px;
-    padding: 8px 10px;
-    border: 1px solid #dcdfe6;
-    border-radius: 4px;
-    font-size: 14px;
-    font-weight: 500;
-    line-height: 20px;
-    text-align: center;
-    box-sizing: border-box;
-  }
-  .inline-input:focus {
-    outline: none;
-    border-color: #409eff;
-    box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.12);
-  }
   .action-link {
     color: #409eff;
     cursor: pointer;
     text-decoration: underline;
     white-space: nowrap;
   }
-  .action-link.disabled {
-    color: #c0c4cc;
-    cursor: not-allowed;
-    text-decoration: none;
-  }
-  .save-message {
+  .editable-number {
     display: inline-block;
-    margin-left: 8px;
-    color: #67c23a;
-    font-size: 12px;
+    min-width: 72px;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
   }
-  .save-message.error {
+  .editable-number:hover {
+    background: rgba(64, 158, 255, 0.10);
+  }
+  .modal-mask {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+  }
+  .modal-mask.show {
+    display: flex;
+  }
+  .modal-card {
+    width: min(420px, calc(100vw - 32px));
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.22);
+  }
+  .modal-title {
+    margin: 0 0 12px;
+    font-size: 18px;
+    color: #303133;
+  }
+  .modal-text {
+    margin: 0 0 12px;
+    color: #606266;
+    font-size: 14px;
+  }
+  .modal-input {
+    width: 100%;
+    min-height: 40px;
+    padding: 10px 12px;
+    border: 1px solid #dcdfe6;
+    border-radius: 6px;
+    font-size: 14px;
+    outline: none;
+  }
+  .modal-input:focus {
+    border-color: #409eff;
+    box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.12);
+  }
+  .modal-error {
+    min-height: 20px;
+    margin-top: 8px;
     color: #f56c6c;
+    font-size: 13px;
+  }
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 16px;
   }
   .task-link,
   .task-link:visited {
@@ -258,16 +292,26 @@
   .rate.low {
     color: #ffd166;
   }
-  .inline-input {
-    background: rgba(7, 20, 38, 0.85);
-    color: #eef7ff;
-    border-color: rgba(122, 188, 255, 0.22);
-  }
   .action-link {
     color: #7fe7ff;
   }
-  .action-link.disabled {
-    color: #5f728a;
+  .editable-number:hover {
+    background: rgba(127, 231, 255, 0.12);
+  }
+  .modal-card {
+    background: rgba(9, 25, 47, 0.96);
+    border: 1px solid rgba(122, 188, 255, 0.20);
+  }
+  .modal-title {
+    color: #eef7ff;
+  }
+  .modal-text {
+    color: #9fb7cf;
+  }
+  .modal-input {
+    background: rgba(7, 20, 38, 0.85);
+    color: #eef7ff;
+    border-color: rgba(122, 188, 255, 0.22);
   }
   code {
     background: rgba(4, 15, 29, 0.70);
@@ -296,7 +340,7 @@
     <div class="card">
       <p class="muted">说明1：本页面展示最近 100 条 SpiderMonitor 上报的终态事件，仅统计 <code>close</code> 和 <code>error</code>。</p>
       <p class="muted">说明2：抓全率按 <code>itemsNums / totalNums</code> 计算；当预期抓取量为空或小于等于 0 时显示 <code>-</code>。</p>
-      <p class="muted">说明3：可直接修改“预期抓取”和“抓取数量”，保存后系统会自动重算抓全率并更新这条数据。</p>
+      <p class="muted">说明3：点击“预期抓取”或“抓取数量”里的数字即可弹框修改，确认后系统会自动重算抓全率并更新这条数据。</p>
       <p class="muted">当前数据源：<code>{{ database_dir }}</code>，配置文件：<code>{{ settings_path }}</code>，状态库：<code>{{ status_db_path }}</code></p>
 
       <div class="toolbar">
@@ -343,7 +387,6 @@
             <th class="center">抓取数量</th>
             <th class="center">抓全率</th>
             <th class="center">上报时间</th>
-            <th class="center">操作</th>
           </tr>
         </thead>
         <tbody>
@@ -353,12 +396,15 @@
             <td>{{ row.spider }}</td>
             <td>{{ row.job_id }}</td>
             <td class="center"><span class="status-tag {{ row.status_class }}">{{ row.status_text }}</span></td>
-            <td class="center"><input class="inline-input js-total-nums" type="number" min="0" value="{% if row.total_nums == 'N/A' %}0{% else %}{{ row.total_nums }}{% endif %}"></td>
+            <td class="center">
+              <a class="action-link editable-number js-edit-total-nums" href="javascript:void(0);">{% if row.total_nums == 'N/A' %}0{% else %}{{ row.total_nums }}{% endif %}</a>
+            </td>
             <td class="center">{{ row.url_nums }}</td>
-            <td class="center"><input class="inline-input js-items-nums" type="number" min="0" value="{% if row.items_nums == 'N/A' %}0{% else %}{{ row.items_nums }}{% endif %}"></td>
+            <td class="center">
+              <a class="action-link editable-number js-edit-items-nums" href="javascript:void(0);">{% if row.items_nums == 'N/A' %}0{% else %}{{ row.items_nums }}{% endif %}</a>
+            </td>
             <td class="center js-coverage-rate-cell"><span class="rate {{ row.rate_class }}">{{ row.coverage_rate }}</span></td>
             <td class="center js-event-time-cell">{{ row.event_time }}</td>
-            <td class="center"><a class="action-link js-save-coverage" href="javascript:void(0);">保存</a><span class="save-message js-save-message"></span></td>
           </tr>
         {% endfor %}
         </tbody>
@@ -369,63 +415,132 @@
       {% endif %}
     </div>
   </div>
+  <div class="modal-mask" id="edit-modal">
+    <div class="modal-card">
+      <h3 class="modal-title" id="edit-modal-title">修改数值</h3>
+      <p class="modal-text" id="edit-modal-text"></p>
+      <input class="modal-input" id="edit-modal-input" type="number" min="0">
+      <div class="modal-error" id="edit-modal-error"></div>
+      <div class="modal-actions">
+        <a class="button normal" href="javascript:void(0);" id="edit-modal-cancel">取消</a>
+        <a class="button safe" href="javascript:void(0);" id="edit-modal-save">保存</a>
+      </div>
+    </div>
+  </div>
   <script>
   (function () {
-    function bindSaveAction(button) {
-      button.addEventListener('click', function () {
-        if (button.classList.contains('disabled')) {
-          return;
-        }
-        var row = button.closest('tr');
-        if (!row) {
-          return;
-        }
-        var totalInput = row.querySelector('.js-total-nums');
-        var itemsInput = row.querySelector('.js-items-nums');
-        var messageNode = row.querySelector('.js-save-message');
-        var rateCell = row.querySelector('.js-coverage-rate-cell');
-        var recordId = row.getAttribute('data-record-id');
+    var modal = document.getElementById('edit-modal');
+    var modalTitle = document.getElementById('edit-modal-title');
+    var modalText = document.getElementById('edit-modal-text');
+    var modalInput = document.getElementById('edit-modal-input');
+    var modalError = document.getElementById('edit-modal-error');
+    var modalCancel = document.getElementById('edit-modal-cancel');
+    var modalSave = document.getElementById('edit-modal-save');
+    var editingContext = null;
 
-        button.classList.add('disabled');
-        messageNode.classList.remove('error');
-        messageNode.textContent = '保存中...';
+    function closeModal() {
+      modal.classList.remove('show');
+      modalError.textContent = '';
+      editingContext = null;
+    }
 
-        fetch('{{ url_for("daily_stats.update_coverage_stats_record") }}', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            record_id: recordId,
-            total_nums: totalInput.value,
-            items_nums: itemsInput.value
-          })
+    function openModal(row, fieldName) {
+      var totalNode = row.querySelector('.js-edit-total-nums');
+      var itemsNode = row.querySelector('.js-edit-items-nums');
+      var currentValue = fieldName === 'total_nums' ? totalNode.textContent.trim() : itemsNode.textContent.trim();
+      editingContext = {
+        row: row,
+        fieldName: fieldName
+      };
+      modalTitle.textContent = fieldName === 'total_nums' ? '修改预期抓取数' : '修改抓取数量';
+      modalText.textContent = '请输入新的' + (fieldName === 'total_nums' ? '预期抓取数' : '抓取数量');
+      modalInput.value = currentValue;
+      modalError.textContent = '';
+      modal.classList.add('show');
+      modalInput.focus();
+      modalInput.select();
+    }
+
+    function saveRow(row, totalNums, itemsNums) {
+      var rateCell = row.querySelector('.js-coverage-rate-cell');
+      var totalNode = row.querySelector('.js-edit-total-nums');
+      var itemsNode = row.querySelector('.js-edit-items-nums');
+      var recordId = row.getAttribute('data-record-id');
+      fetch('{{ url_for("daily_stats.update_coverage_stats_record") }}', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          record_id: recordId,
+          total_nums: totalNums,
+          items_nums: itemsNums
         })
-          .then(function (response) {
-            return response.json().then(function (data) {
-              return { ok: response.ok, data: data };
-            });
-          })
-          .then(function (result) {
-            if (!result.ok || result.data.status !== 'ok') {
-              throw new Error((result.data && result.data.message) || '保存失败');
-            }
-            rateCell.innerHTML = '<span class="rate ' + result.data.rate_class + '">' + result.data.coverage_rate + '</span>';
-            messageNode.classList.remove('error');
-            messageNode.textContent = '已保存';
-          })
-          .catch(function (error) {
-            messageNode.classList.add('error');
-            messageNode.textContent = error.message || '保存失败';
-          })
-          .finally(function () {
-            button.classList.remove('disabled');
+      })
+        .then(function (response) {
+          return response.json().then(function (data) {
+            return { ok: response.ok, data: data };
           });
+        })
+        .then(function (result) {
+          if (!result.ok || result.data.status !== 'ok') {
+            throw new Error((result.data && result.data.message) || '保存失败');
+          }
+          totalNode.textContent = result.data.total_nums;
+          itemsNode.textContent = result.data.items_nums;
+          rateCell.innerHTML = '<span class="rate ' + result.data.rate_class + '">' + result.data.coverage_rate + '</span>';
+          closeModal();
+        })
+        .catch(function (error) {
+          modalError.textContent = error.message || '保存失败';
+        });
+    }
+
+    function bindEditAction(selector, fieldName) {
+      var nodes = document.querySelectorAll(selector);
+      Array.prototype.forEach.call(nodes, function (node) {
+        node.addEventListener('click', function () {
+          var row = node.closest('tr');
+          if (!row) {
+            return;
+          }
+          openModal(row, fieldName);
+        });
       });
     }
 
-    var buttons = document.querySelectorAll('.js-save-coverage');
-    Array.prototype.forEach.call(buttons, bindSaveAction);
+    modalCancel.addEventListener('click', closeModal);
+    modal.addEventListener('click', function (event) {
+      if (event.target === modal) {
+        closeModal();
+      }
+    });
+    modalSave.addEventListener('click', function () {
+      if (!editingContext) {
+        return;
+      }
+      var trimmedValue = String(modalInput.value || '').trim();
+      if (!/^\d+$/.test(trimmedValue)) {
+        modalError.textContent = '请输入大于等于 0 的整数';
+        return;
+      }
+      var totalNode = editingContext.row.querySelector('.js-edit-total-nums');
+      var itemsNode = editingContext.row.querySelector('.js-edit-items-nums');
+      var nextTotalNums = editingContext.fieldName === 'total_nums' ? trimmedValue : totalNode.textContent.trim();
+      var nextItemsNums = editingContext.fieldName === 'items_nums' ? trimmedValue : itemsNode.textContent.trim();
+      modalError.textContent = '';
+      saveRow(editingContext.row, nextTotalNums, nextItemsNums);
+    });
+    modalInput.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter') {
+        modalSave.click();
+      } else if (event.key === 'Escape') {
+        closeModal();
+      }
+    });
+
+    bindEditAction('.js-edit-total-nums', 'total_nums');
+    bindEditAction('.js-edit-items-nums', 'items_nums');
   })();
   </script>
 </body>
