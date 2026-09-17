@@ -555,6 +555,10 @@ def format_percent(numerator, denominator):
     return '%.1f%%' % (float(numerator) * 100.0 / float(denominator))
 
 
+def format_success_fraction(success_count, actual_execute):
+    return '%s/%s' % (success_count or 0, actual_execute or 0)
+
+
 def format_week_change(current_total, previous_total):
     if previous_total == 0:
         if current_total == 0:
@@ -642,7 +646,7 @@ def merge_weekly_rows(rows):
             source_types=source_types,
             independent_run_type=independent_run_type,
         ))
-        row['success_rate'] = format_percent(success_count, row['actual_execute'])
+        row['success_rate'] = format_success_fraction(success_count, row['actual_execute'])
         row['average_daily_items'] = '%.1f' % (float(row['scraped_total']) / 7.0)
         row['week_change'] = format_week_change(current_total, previous_total)
         row['week_change_class'] = get_week_change_class(row['week_change'])
@@ -2125,7 +2129,7 @@ def build_weekly_report_legacy(selected_date):
             run_type='定时',
             should_execute=should_execute,
             actual_execute=actual_execute,
-            success_rate=format_percent(success_count, actual_execute),
+            success_rate=format_success_fraction(success_count, actual_execute),
             scraped_total=scraped_total,
             average_daily_items='%.1f' % (float(scraped_total) / 7.0),
             week_change=format_week_change(scraped_total, previous_scraped_total),
@@ -2163,7 +2167,7 @@ def build_weekly_report_legacy(selected_date):
             run_type=get_independent_run_type(group['spider'], spider_name_map=spider_name_map),
             should_execute='-',
             actual_execute=group['actual_execute'],
-            success_rate=format_percent(group['success_count'], group['actual_execute']),
+            success_rate=format_success_fraction(group['success_count'], group['actual_execute']),
             scraped_total=group['scraped_total'],
             average_daily_items='%.1f' % (float(group['scraped_total']) / 7.0),
             week_change=format_week_change(group['scraped_total'], previous_group.get('scraped_total', 0)),
@@ -2193,7 +2197,7 @@ def build_weekly_report_legacy(selected_date):
         total_actual_execute=total_actual_execute,
         total_scraped_items=sum(row['scraped_total'] for row in rows),
     )
-    summary['overall_success_rate'] = format_percent(total_success_count, total_actual_execute)
+    summary['overall_success_rate'] = format_success_fraction(total_success_count, total_actual_execute)
     return rows, summary, week_start, week_end, previous_week_start, is_current_week
 
 
@@ -2249,7 +2253,7 @@ def build_weekly_report(selected_date):
             run_type='定时',
             should_execute=should_execute,
             actual_execute=actual_execute,
-            success_rate=format_percent(success_count, actual_execute),
+            success_rate=format_success_fraction(success_count, actual_execute),
             scraped_total=scraped_total,
             average_daily_items='%.1f' % (float(scraped_total) / 7.0),
             week_change=format_week_change(scraped_total, previous_scraped_total),
@@ -2284,7 +2288,7 @@ def build_weekly_report(selected_date):
             run_type=get_independent_run_type(group['spider'], spider_name_map=spider_name_map),
             should_execute='-',
             actual_execute=group['actual_execute'],
-            success_rate=format_percent(group['success_count'], group['actual_execute']),
+            success_rate=format_success_fraction(group['success_count'], group['actual_execute']),
             scraped_total=group['scraped_items_total'],
             average_daily_items='%.1f' % (float(group['scraped_items_total']) / 7.0),
             week_change=format_week_change(group['scraped_items_total'], previous_group.get('scraped_items_total', 0)),
@@ -2314,7 +2318,7 @@ def build_weekly_report(selected_date):
         total_actual_execute=total_actual_execute,
         total_scraped_items=sum(row['scraped_total'] for row in rows),
     )
-    summary['overall_success_rate'] = format_percent(total_success_count, total_actual_execute)
+    summary['overall_success_rate'] = format_success_fraction(total_success_count, total_actual_execute)
     return rows, summary, week_start, week_end, previous_week_start, is_current_week
 
 
