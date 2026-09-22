@@ -18,6 +18,7 @@ from .common import (APSCHEDULER_DB, DAILY_STATS_DB, DATABASE_DIR, JOBS_DB, SCRA
                     get_fire_times_by_day, get_existing_job_tables, get_job_tables, get_manual_job_status,
                     load_aggregate_rows, load_job_states, load_status_rows, load_task_job_results,
                     load_task_results_by_task, load_tasks)
+from .schedule_text import describe_schedule, raw_schedule
 
 
 bp = Blueprint('daily_stats', __name__, template_folder='templates', url_prefix='/stats')
@@ -263,16 +264,7 @@ def load_spider_expected_interval(spider):
 
 
 def format_task_schedule(task):
-    trigger = task.get('trigger') or '-'
-    if trigger != 'cron':
-        return trigger
-    return 'minute={minute}, hour={hour}, day={day}, month={month}, day_of_week={day_of_week}'.format(
-        minute=task.get('minute') or '*',
-        hour=task.get('hour') or '*',
-        day=task.get('day') or '*',
-        month=task.get('month') or '*',
-        day_of_week=task.get('day_of_week') or '*',
-    )
+    return describe_schedule(task)
 
 
 def load_spider_task_configs(spider):
@@ -287,6 +279,7 @@ def load_spider_task_configs(spider):
             version=task.get('version') or '-',
             trigger=task.get('trigger') or '-',
             schedule=format_task_schedule(task),
+            schedule_raw=raw_schedule(task),
             selected_nodes=task.get('selected_nodes') or '-',
             settings_arguments=task.get('settings_arguments') or '-',
             start_date=task.get('start_date') or '-',

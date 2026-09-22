@@ -167,7 +167,10 @@
             <tr><th>任务ID</th><td>{{ task.id }}</td></tr>
             <tr><th>任务名称</th><td>{{ task.name }}</td></tr>
             <tr><th>项目</th><td>{{ task.project }}</td></tr>
-            <tr><th>调度配置</th><td><code>{{ task.schedule }}</code></td></tr>
+            <tr><th>调度配置</th><td>
+              <div>{{ task.schedule }}</div>
+              <details class="muted"><summary>查看原始配置</summary><code>{{ task.schedule_raw }}</code></details>
+            </td></tr>
             <tr><th>参数配置</th><td><code>{{ task.settings_arguments }}</code></td></tr>
             <tr><th>更新时间</th><td>{{ task.update_time }}</td></tr>
           </tbody>
