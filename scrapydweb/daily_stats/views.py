@@ -640,7 +640,7 @@ def merge_weekly_rows(rows):
             independent_run_type=independent_run_type,
         ))
         row['success_rate'] = format_success_fraction(success_count, row['actual_execute'])
-        row['average_daily_items'] = '%.1f' % (float(row['scraped_total']) / 7.0)
+        row['average_items_per_run'] = format_average_value(row['scraped_total'], row['actual_execute'])
         row['week_change'] = format_week_change(current_total, previous_total)
         row['week_change_class'] = get_week_change_class(row['week_change'])
         row['highlight_danger'] = (
@@ -2124,7 +2124,6 @@ def build_weekly_report_legacy(selected_date):
             actual_execute=actual_execute,
             success_rate=format_success_fraction(success_count, actual_execute),
             scraped_total=scraped_total,
-            average_daily_items='%.1f' % (float(scraped_total) / 7.0),
             week_change=format_week_change(scraped_total, previous_scraped_total),
             week_change_class=get_week_change_class(format_week_change(scraped_total, previous_scraped_total)),
             failure_reason=main_failure_reason,
@@ -2162,7 +2161,6 @@ def build_weekly_report_legacy(selected_date):
             actual_execute=group['actual_execute'],
             success_rate=format_success_fraction(group['success_count'], group['actual_execute']),
             scraped_total=group['scraped_total'],
-            average_daily_items='%.1f' % (float(group['scraped_total']) / 7.0),
             week_change=format_week_change(group['scraped_total'], previous_group.get('scraped_total', 0)),
             week_change_class=get_week_change_class(
                 format_week_change(group['scraped_total'], previous_group.get('scraped_total', 0))
@@ -2248,7 +2246,6 @@ def build_weekly_report(selected_date):
             actual_execute=actual_execute,
             success_rate=format_success_fraction(success_count, actual_execute),
             scraped_total=scraped_total,
-            average_daily_items='%.1f' % (float(scraped_total) / 7.0),
             week_change=format_week_change(scraped_total, previous_scraped_total),
             week_change_class=get_week_change_class(format_week_change(scraped_total, previous_scraped_total)),
             failure_reason=main_failure_reason,
@@ -2283,7 +2280,6 @@ def build_weekly_report(selected_date):
             actual_execute=group['actual_execute'],
             success_rate=format_success_fraction(group['success_count'], group['actual_execute']),
             scraped_total=group['scraped_items_total'],
-            average_daily_items='%.1f' % (float(group['scraped_items_total']) / 7.0),
             week_change=format_week_change(group['scraped_items_total'], previous_group.get('scraped_items_total', 0)),
             week_change_class=get_week_change_class(
                 format_week_change(group['scraped_items_total'], previous_group.get('scraped_items_total', 0))
