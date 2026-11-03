@@ -310,6 +310,7 @@
         <a class="button normal" href="{{ url_for('daily_stats.weekly_stats', date=selected_date) }}">任务周报</a>
         <a class="button normal" href="{{ url_for('daily_stats.annual_stats', date=selected_date) }}">任务年报</a>
         <a class="button normal" href="{{ url_for('daily_stats.coverage_stats', date=selected_date) }}">抓全率</a>
+        <a class="button normal" href="{{ url_for('daily_stats.index') }}">任务看板</a>
         {% if not is_today %}
         <a class="button normal" href="{{ url_for('daily_stats.daily_stats') }}">回到今天</a>
         {% endif %}
