@@ -334,6 +334,82 @@ def format_big_number(value):
     return '{:,}'.format(value)
 
 
+def load_running_timer_tasks():
+    """Return every running timer execution with its persisted schedule configuration."""
+    task_rows = load_tasks()
+    task_map = dict((task.get('id'), task) for task in task_rows)
+    spider_name_map = build_spider_name_map(task_rows)
+    job_states = load_job_states()
+
+    conn = connect_readonly(DAILY_STATS_DB)
+    try:
+        rows = conn.execute(
+            '''
+            SELECT *
+            FROM task_execution_fact
+            WHERE source_type = 'timer'
+              AND status = 'running'
+              AND is_timer_child = 0
+            ORDER BY COALESCE(start_time, planned_time, created_at) ASC, fact_id ASC
+            '''
+        ).fetchall()
+    finally:
+        conn.close()
+
+    now = datetime.now()
+    result = []
+    for row in rows:
+        record = dict(row)
+        task = task_map.get(record.get('task_id')) or {}
+        start_time = format_datetime(record.get('start_time') or record.get('planned_time'))
+        running_duration = 'N/A'
+        if start_time:
+            running_duration = format_duration_between(start_time, now.strftime('%Y-%m-%d %H:%M:%S'))
+        job_state = job_states.get(str(record.get('task_id'))) or {}
+        next_run_timestamp = job_state.get('next_run_time')
+        next_run_time = '-'
+        if isinstance(next_run_timestamp, (int, float)):
+            next_run_time = datetime.fromtimestamp(next_run_timestamp).strftime('%Y-%m-%d %H:%M:%S')
+        result.append(dict(
+            fact_id=record.get('fact_id'),
+            task_id=record.get('task_id'),
+            name=resolve_display_name(
+                record.get('spider'),
+                project=record.get('project'),
+                fallback_name=task.get('name') or record.get('task_name'),
+                spider_name_map=spider_name_map,
+            ),
+            task_name=clean_task_name(task.get('name') or record.get('task_name')) or '-',
+            project=record.get('project') or task.get('project') or '-',
+            spider=record.get('spider') or task.get('spider') or '-',
+            job_id=record.get('job_id') or '-',
+            server=record.get('server') or '-',
+            node=record.get('node') if record.get('node') is not None else '-',
+            planned_time=format_datetime(record.get('planned_time')) or '-',
+            start_time=start_time or '-',
+            last_run_time=start_time or '-',
+            next_run_time=next_run_time,
+            running_duration=running_duration,
+            schedule=describe_schedule(task) if task else '-',
+            schedule_raw=raw_schedule(task) if task else '-',
+            trigger=task.get('trigger') or '-',
+            version=task.get('version') or '-',
+            selected_nodes=task.get('selected_nodes') or '-',
+            settings_arguments=task.get('settings_arguments') or '-',
+            start_date=task.get('start_date') or '-',
+            end_date=task.get('end_date') or '-',
+            timezone=task.get('timezone') or '-',
+            jitter=task.get('jitter') if task.get('jitter') is not None else '-',
+            misfire_grace_time=(
+                task.get('misfire_grace_time')
+                if task.get('misfire_grace_time') is not None else '-'
+            ),
+            coalesce=task.get('coalesce') if task.get('coalesce') is not None else '-',
+            max_instances=task.get('max_instances') if task.get('max_instances') is not None else '-',
+        ))
+    return result
+
+
 def load_dashboard_summary():
     ensure_status_db()
     excluded_condition = "spider NOT LIKE 'room_util%'"
@@ -2647,6 +2723,7 @@ def index():
     return render_template(
         'index.html',
         cards=load_dashboard_summary(),
+        running_timer_tasks=load_running_timer_tasks(),
         now=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
     )
 

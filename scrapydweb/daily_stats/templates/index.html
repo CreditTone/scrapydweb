@@ -249,6 +249,104 @@
     font-size: 12px;
     letter-spacing: 0.12em;
   }
+  .running-panel {
+    margin-top: 24px;
+    border: 1px solid var(--line);
+    border-radius: 24px;
+    padding: 22px;
+    background: linear-gradient(135deg, rgba(10, 25, 46, 0.86), rgba(8, 18, 31, 0.78));
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28);
+  }
+  .section-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px 24px;
+    margin-bottom: 16px;
+  }
+  .section-title { margin: 0; font-size: 22px; }
+  .running-count {
+    flex: 0 0 auto;
+    color: var(--green);
+    font-size: 14px;
+    white-space: nowrap;
+  }
+  .task-search {
+    width: min(320px, 100%);
+    border: 1px solid rgba(122, 188, 255, 0.28);
+    border-radius: 999px;
+    padding: 10px 15px;
+    background: rgba(4, 15, 29, 0.68);
+    color: #eef7ff;
+    font-size: 14px;
+    outline: none;
+  }
+  .task-search::placeholder { color: #7893ad; }
+  .task-search:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 3px rgba(53, 213, 255, 0.10);
+  }
+  .running-tools {
+    display: flex;
+    flex: 1 1 390px;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 18px;
+    min-width: 0;
+  }
+  .search-empty { display: none; color: var(--muted); padding: 24px 4px; text-align: center; }
+  .running-empty { color: var(--muted); padding: 24px 4px; text-align: center; }
+  .running-task {
+    border: 1px solid rgba(122, 188, 255, 0.18);
+    border-radius: 14px;
+    margin-top: 10px;
+    background: rgba(13, 35, 64, 0.62);
+  }
+  .running-task summary {
+    display: grid;
+    grid-template-columns: minmax(180px, 1.4fr) minmax(150px, 1fr) minmax(145px, .8fr) auto;
+    gap: 16px;
+    align-items: center;
+    padding: 16px 18px;
+    cursor: pointer;
+    list-style: none;
+  }
+  .running-task summary::-webkit-details-marker { display: none; }
+  .running-task summary::after { content: "展开详情 ＋"; color: var(--cyan); font-size: 13px; }
+  .running-task[open] summary::after { content: "收起详情 －"; }
+  .task-name { color: #f4fbff; font-weight: 700; word-break: break-word; }
+  .task-meta { color: var(--muted); font-size: 13px; word-break: break-all; }
+  .task-detail {
+    border-top: 1px solid rgba(122, 188, 255, 0.14);
+    padding: 16px 18px 18px;
+  }
+  .task-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .task-link {
+    display: inline-block;
+    border: 1px solid rgba(53, 213, 255, 0.30);
+    border-radius: 999px;
+    padding: 7px 12px;
+    background: rgba(53, 213, 255, 0.10);
+    color: #bfefff;
+    font-size: 13px;
+    text-decoration: none;
+  }
+  .task-link:hover { border-color: var(--cyan); color: #fff; }
+  .detail-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(180px, 1fr));
+    gap: 12px 18px;
+  }
+  .detail-item { min-width: 0; }
+  .detail-label { color: #7893ad; font-size: 12px; margin-bottom: 5px; }
+  .detail-value { color: #dceeff; font-size: 14px; line-height: 1.5; word-break: break-all; white-space: pre-wrap; }
+  .detail-wide { grid-column: 1 / -1; }
   .footer-note {
     margin-top: 24px;
     color: var(--muted);
@@ -317,6 +415,11 @@
     .metric-card:nth-child(1) .metric-value {
       font-size: clamp(42px, 12vw, 62px);
     }
+    .section-heading { align-items: flex-start; flex-direction: column; }
+    .running-tools { width: 100%; flex-direction: column; align-items: stretch; }
+    .task-search { width: 100%; }
+    .running-task summary { grid-template-columns: 1fr; gap: 7px; }
+    .detail-grid { grid-template-columns: 1fr; }
     .footer-note {
       text-align: left;
     }
@@ -351,6 +454,56 @@
         {% endfor %}
       </div>
     </div>
+
+    <section class="running-panel">
+      <div class="section-heading">
+        <h2 class="section-title">爬虫集群定时任务列表</h2>
+        <div class="running-tools">
+          <input id="task-search" class="task-search" type="search" placeholder="搜索任务名" autocomplete="off" aria-label="按任务名搜索">
+          <div id="running-count" class="running-count">共 {{ running_timer_tasks|length }} 个</div>
+        </div>
+      </div>
+      {% if running_timer_tasks %}
+        {% for task in running_timer_tasks %}
+        <details class="running-task">
+          <summary>
+            <div>
+              <div class="task-name">{{ task.name }}</div>
+              <div class="task-meta">Task #{{ task.task_id }} · {{ task.project }} / {{ task.spider }}</div>
+            </div>
+            <div>
+              <div class="task-meta">{{ task.schedule }}</div>
+            </div>
+            <div class="task-meta">上次运行时间：{{ task.last_run_time }}<br>下次运行时间：{{ task.next_run_time }}</div>
+          </summary>
+          <div class="task-detail">
+            <div class="task-links">
+              <a class="task-link" href="{{ url_for('daily_stats.spider_doc', spider=task.spider) }}" target="_blank" rel="noopener noreferrer">爬虫文档</a>
+              <a class="task-link" href="{{ url_for('daily_stats.task_stats', spider=task.spider) }}" target="_blank" rel="noopener noreferrer">任务明细</a>
+            </div>
+            <div class="detail-grid">
+              <div class="detail-item"><div class="detail-label">任务名称</div><div class="detail-value">{{ task.task_name }}</div></div>
+              <div class="detail-item"><div class="detail-label">Task ID</div><div class="detail-value">{{ task.task_id }}</div></div>
+              <div class="detail-item"><div class="detail-label">Job ID</div><div class="detail-value">{{ task.job_id }}</div></div>
+              <div class="detail-item"><div class="detail-label">项目 / 版本</div><div class="detail-value">{{ task.project }} / {{ task.version }}</div></div>
+              <div class="detail-item"><div class="detail-label">Spider</div><div class="detail-value">{{ task.spider }}</div></div>
+              <div class="detail-item"><div class="detail-label">节点 / Server</div><div class="detail-value">{{ task.node }} / {{ task.server }}</div></div>
+              <div class="detail-item"><div class="detail-label">上次运行时间</div><div class="detail-value">{{ task.last_run_time }}</div></div>
+              <div class="detail-item"><div class="detail-label">下次运行时间</div><div class="detail-value">{{ task.next_run_time }}</div></div>
+              <div class="detail-item detail-wide"><div class="detail-label">定时计划</div><div class="detail-value">{{ task.schedule }}
+{{ task.schedule_raw }}</div></div>
+              <div class="detail-item"><div class="detail-label">Trigger / Timezone</div><div class="detail-value">{{ task.trigger }} / {{ task.timezone }}</div></div>
+              <div class="detail-item"><div class="detail-label">生效时间</div><div class="detail-value">{{ task.start_date }} ~ {{ task.end_date }}</div></div>
+              <div class="detail-item detail-wide"><div class="detail-label">Settings / Arguments</div><div class="detail-value">{{ task.settings_arguments }}</div></div>
+            </div>
+          </div>
+        </details>
+        {% endfor %}
+        <div id="search-empty" class="search-empty">没有找到匹配的定时任务</div>
+      {% else %}
+        <div class="running-empty">当前没有定时任务</div>
+      {% endif %}
+    </section>
 
     <div class="footer-note">页面更新时间：{{ now }}</div>
   </div>
@@ -421,6 +574,34 @@
       document.querySelectorAll('.metric-value'),
       animateNumberElement
     );
+
+    var searchInput = document.getElementById('task-search');
+    var countElement = document.getElementById('running-count');
+    var searchEmpty = document.getElementById('search-empty');
+    var taskElements = Array.prototype.slice.call(document.querySelectorAll('.running-task'));
+    if (searchInput) {
+      searchInput.addEventListener('input', function () {
+        var keyword = searchInput.value.trim().toLocaleLowerCase();
+        var visibleCount = 0;
+        taskElements.forEach(function (taskElement) {
+          var nameElement = taskElement.querySelector('.task-name');
+          var taskName = nameElement ? nameElement.textContent.trim().toLocaleLowerCase() : '';
+          var visible = !keyword || taskName.indexOf(keyword) !== -1;
+          taskElement.style.display = visible ? '' : 'none';
+          if (visible) {
+            visibleCount += 1;
+          }
+        });
+        if (countElement) {
+          countElement.textContent = keyword
+            ? '找到 ' + visibleCount + ' 个'
+            : '共 ' + taskElements.length + ' 个';
+        }
+        if (searchEmpty) {
+          searchEmpty.style.display = keyword && visibleCount === 0 ? 'block' : 'none';
+        }
+      });
+    }
   })();
   </script>
 </body>
