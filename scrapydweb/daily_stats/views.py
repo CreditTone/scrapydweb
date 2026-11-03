@@ -441,14 +441,6 @@ def load_dashboard_summary():
             )
             '''.format(excluded_condition=excluded_condition)
         ).fetchone()['value']
-        spider_count = conn.execute(
-            '''
-            SELECT COUNT(DISTINCT spider) AS value
-            FROM task_execution_fact
-            WHERE {excluded_condition}
-              AND TRIM(COALESCE(spider, '')) != ''
-            '''.format(excluded_condition=excluded_condition)
-        ).fetchone()['value']
         running_task_count = conn.execute(
             '''
             SELECT COUNT(*) AS value
@@ -475,7 +467,6 @@ def load_dashboard_summary():
     cards = [
         dict(label='历史累计抓取数量', value=format_big_number(int(total_scraped_items or 0))),
         dict(label='历史任务执行次数', value=format_big_number(int(historical_task_count or 0))),
-        dict(label='Spider 总数', value=format_big_number(int(spider_count or 0))),
         dict(label='定时任务总数', value=format_big_number(int(timer_task_count or 0))),
         dict(label='集群节点数', value=format_big_number(int(cluster_node_count or 0))),
         dict(label='当前运行任务数', value=format_big_number(int(running_task_count or 0))),
