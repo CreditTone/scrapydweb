@@ -416,8 +416,6 @@ def load_timer_tasks():
 def load_dashboard_summary():
     ensure_status_db()
     excluded_condition = "spider NOT LIKE 'room_util%'"
-    today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-    tomorrow_start = today_start + timedelta(days=1)
     conn = connect_readonly(DAILY_STATS_DB)
     try:
         total_scraped_items = conn.execute(
@@ -428,21 +426,6 @@ def load_dashboard_summary():
               AND scraped_items IS NOT NULL
               AND scraped_items > 0
             '''.format(excluded_condition=excluded_condition)
-        ).fetchone()['value']
-        today_scraped_items = conn.execute(
-            '''
-            SELECT COALESCE(SUM(scraped_items), 0) AS value
-            FROM task_execution_fact
-            WHERE {excluded_condition}
-              AND scraped_items IS NOT NULL
-              AND scraped_items > 0
-              AND COALESCE(start_time, planned_time, finish_time, created_at) >= ?
-              AND COALESCE(start_time, planned_time, finish_time, created_at) < ?
-            '''.format(excluded_condition=excluded_condition),
-            (
-                today_start.strftime('%Y-%m-%d %H:%M:%S'),
-                tomorrow_start.strftime('%Y-%m-%d %H:%M:%S'),
-            ),
         ).fetchone()['value']
         historical_task_count = conn.execute(
             '''
@@ -476,6 +459,8 @@ def load_dashboard_summary():
     finally:
         conn.close()
 
+    _timer_rows, _manual_rows, today_summary, _carryover_rows = build_daily_report(datetime.now())
+    today_scraped_items = today_summary.get('total_scraped_items', 0)
     cluster_node_count = len(set(server for _group, server, _auth in SCRAPYD_SERVERS))
     cards = [
         dict(label='历史累计抓取数量', value=format_big_number(int(total_scraped_items or 0))),
