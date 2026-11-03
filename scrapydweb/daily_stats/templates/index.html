@@ -460,11 +460,11 @@
         <h2 class="section-title">爬虫集群定时任务列表</h2>
         <div class="running-tools">
           <input id="task-search" class="task-search" type="search" placeholder="搜索任务名" autocomplete="off" aria-label="按任务名搜索">
-          <div id="running-count" class="running-count">共 {{ running_timer_tasks|length }} 个</div>
+          <div id="running-count" class="running-count">共 {{ timer_tasks|length }} 个</div>
         </div>
       </div>
-      {% if running_timer_tasks %}
-        {% for task in running_timer_tasks %}
+      {% if timer_tasks %}
+        {% for task in timer_tasks %}
         <details class="running-task">
           <summary>
             <div>

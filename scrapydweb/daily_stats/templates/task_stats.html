@@ -3,7 +3,7 @@
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ summary.task_name }} - 任务统计</title>
+  <title>{{ summary.task_name }} - 任务明细</title>
   <style>
   body {
     margin: 0;
@@ -306,7 +306,7 @@
     <div class="card">
       <div class="header">
         <div>
-          <h1 class="title">{{ summary.task_name }}</h1>
+          <h1 class="title">{{ summary.task_name }} - 任务明细</h1>
           <p class="subtitle">爬虫 {{ summary.spider }}，{% if summary.query_mode == 'range' %}按日期区间展示{% else %}展示最近 100 次执行{% endif %}，预期执行间隔 {{ summary.expected_interval_text }}，更新时间 {{ now }}</p>
           <p class="subtitle" style="margin-top:6px;">用于观察网站数据波动情况。</p>
         </div>

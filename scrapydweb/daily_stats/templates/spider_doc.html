@@ -1,9 +1,10 @@
 <!DOCTYPE html>
+{% set page_task_name = task_configs[0].name if task_configs and task_configs[0].name else spider %}
 <html>
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ spider }} 文档</title>
+  <title>{{ page_task_name }} - 爬虫文档</title>
   <style>
   body {
     margin: 0;
@@ -154,7 +155,7 @@
     <div class="card">
       <div class="header">
         <div class="header-main">
-          <h1 class="title">{{ spider }} 文档</h1>
+          <h1 class="title">{{ page_task_name }} - 爬虫文档</h1>
           <p class="muted">更新时间 {{ now }}</p>
         </div>
         <a class="button" href="javascript:history.back()">返回</a>
