@@ -315,7 +315,23 @@
   .running-task summary::-webkit-details-marker { display: none; }
   .running-task summary::after { content: "展开详情 ＋"; color: var(--cyan); font-size: 13px; }
   .running-task[open] summary::after { content: "收起详情 －"; }
+  .task-title-row { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; }
   .task-name { color: #f4fbff; font-weight: 700; word-break: break-word; }
+  .task-status {
+    flex: 0 0 auto;
+    border: 1px solid rgba(149, 169, 190, 0.28);
+    border-radius: 999px;
+    padding: 2px 8px;
+    color: #9aafc3;
+    background: rgba(149, 169, 190, 0.10);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .task-status.enabled {
+    border-color: rgba(84, 224, 151, 0.35);
+    color: var(--green);
+    background: rgba(84, 224, 151, 0.11);
+  }
   .task-meta { color: var(--muted); font-size: 13px; word-break: break-all; }
   .task-detail {
     border-top: 1px solid rgba(122, 188, 255, 0.14);
@@ -468,7 +484,10 @@
         <details class="running-task">
           <summary>
             <div>
-              <div class="task-name">{{ task.name }}</div>
+              <div class="task-title-row">
+                <div class="task-name">{{ task.name }}</div>
+                <span class="task-status{% if task.enabled %} enabled{% endif %}">任务状态：{{ task.status_text }}</span>
+              </div>
               <div class="task-meta">Task #{{ task.task_id }} · {{ task.project }} / {{ task.spider }}</div>
             </div>
             <div>

@@ -371,8 +371,9 @@ def load_timer_tasks():
             or {}
         )
         next_run_timestamp = job_state.get('next_run_time')
+        is_enabled = isinstance(next_run_timestamp, (int, float))
         next_run_time = '-'
-        if isinstance(next_run_timestamp, (int, float)):
+        if is_enabled:
             next_run_time = datetime.fromtimestamp(next_run_timestamp).strftime('%Y-%m-%d %H:%M:%S')
         last_run_time = format_datetime(
             record.get('start_time')
@@ -398,6 +399,8 @@ def load_timer_tasks():
             node=record.get('node') if record.get('node') is not None else '-',
             last_run_time=last_run_time,
             next_run_time=next_run_time,
+            enabled=is_enabled,
+            status_text='已开启' if is_enabled else '已关闭',
             schedule=describe_schedule(task),
             schedule_raw=raw_schedule(task),
             trigger=task.get('trigger') or '-',
