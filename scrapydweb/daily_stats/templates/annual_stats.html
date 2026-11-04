@@ -271,6 +271,9 @@
   </style>
 </head>
 <body>
+  {% set active_report_tab = 'annual' %}
+  {% set report_tabs_max_width = '1760px' %}
+  {% include '_report_tabs.html' %}
   <div class="page">
     <div class="header">
       <div class="header-card">
@@ -293,10 +296,6 @@
         <label>年参考日期</label>
         <input type="date" name="date" value="{{ selected_date }}">
         <button class="button safe" type="submit">查询</button>
-        <a class="button normal" href="{{ url_for('daily_stats.daily_stats', date=selected_date) }}">任务日报</a>
-        <a class="button normal" href="{{ url_for('daily_stats.weekly_stats', date=selected_date) }}">任务周报</a>
-        <a class="button normal" href="{{ url_for('daily_stats.coverage_stats', date=selected_date) }}">抓全率</a>
-        <a class="button normal" href="{{ url_for('daily_stats.index') }}">任务看板</a>
         {% if rows %}
         <button class="button normal" type="button" id="copy-annual-table">复制表格</button>
         {% endif %}

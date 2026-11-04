@@ -295,6 +295,9 @@
   </style>
 </head>
 <body>
+  {% set active_report_tab = 'weekly' %}
+  {% set report_tabs_max_width = '1680px' %}
+  {% include '_report_tabs.html' %}
   <div class="page">
     <div class="header">
       <div class="header-card">
@@ -324,10 +327,6 @@
         {% if not is_current_week %}
         <a class="button normal" href="{{ url_for('daily_stats.weekly_stats') }}">回到本周</a>
         {% endif %}
-        <a class="button normal" href="{{ url_for('daily_stats.daily_stats') }}">任务日报</a>
-        <a class="button normal" href="{{ url_for('daily_stats.annual_stats', date=selected_date) }}">任务年报</a>
-        <a class="button normal" href="{{ url_for('daily_stats.coverage_stats', date=selected_date) }}">抓全率</a>
-        <a class="button normal" href="{{ url_for('daily_stats.index') }}">任务看板</a>
         {% if rows %}
         <button class="button normal" type="button" id="copy-weekly-table">复制表格</button>
         {% endif %}
