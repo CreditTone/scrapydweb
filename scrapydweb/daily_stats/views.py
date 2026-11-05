@@ -1340,6 +1340,50 @@ def send_spider_monitor_close_mail(record):
     return True, response.text[:500]
 
 
+def send_spider_monitor_coverage_change_mail(record, previous_total_nums, previous_items_nums):
+    if not SPIDER_MONITOR_MAIL_ENABLED:
+        return False, 'mail disabled'
+    if not SPIDER_MONITOR_MAIL_URL or not SPIDER_MONITOR_MAIL_APPKEY or not SPIDER_MONITOR_MAIL_APP_SECRET:
+        return False, 'mail config missing'
+
+    previous_rate = format_spider_monitor_rate(previous_total_nums, previous_items_nums)
+    current_rate = format_spider_monitor_rate(record.get('total_nums'), record.get('items_nums'))
+    change_body = (
+        '抓全率数据发生变更</br>'
+        '变更前抓取数量 : {previous_items}</br>'
+        '变更后抓取数量 : {current_items}</br>'
+        '变更前抓全率 : {previous_rate}</br>'
+        '变更后抓全率 : {current_rate}</br>'
+        '{separator}</br>'
+    ).format(
+        previous_items=previous_items_nums if previous_items_nums is not None else '-',
+        current_items=record.get('items_nums') if record.get('items_nums') is not None else '-',
+        previous_rate='-' if previous_rate is None else '%s%%' % previous_rate,
+        current_rate='-' if current_rate is None else '%s%%' % current_rate,
+        separator='-' * 32,
+    )
+    params = {
+        'appkey': SPIDER_MONITOR_MAIL_APPKEY,
+        'expires': int(datetime.now().timestamp()) + 100,
+        'nonce': 'daily-stats-service',
+        'to': SPIDER_MONITOR_MAIL_TO,
+        'body': change_body + build_spider_monitor_mail_body(record),
+        'subject': '[爬虫监控][抓全率变更] %s %s' % (
+            record.get('spider_name') or '-',
+            record.get('job_id') or '-',
+        ),
+    }
+    params['signature'] = build_spider_monitor_mail_signature(
+        SPIDER_MONITOR_MAIL_APP_SECRET,
+        params,
+    )
+    import requests
+    response = requests.post(SPIDER_MONITOR_MAIL_URL, data=params, timeout=5)
+    if response.status_code >= 400:
+        raise RuntimeError('mail api status=%s body=%s' % (response.status_code, response.text[:500]))
+    return True, response.text[:500]
+
+
 def mark_spider_monitor_mail_result(record, sent_at=None, error_message=None):
     ensure_status_db()
     conn = connect_writable(DAILY_STATS_DB)
@@ -2827,53 +2871,113 @@ def coverage_stats():
 @bp.route('/api/coveragestats/update', methods=['POST'])
 def update_coverage_stats_record():
     payload = request.get_json(silent=True) or request.form
-    record_id = normalize_optional_int((payload or {}).get('record_id'))
-    total_nums = normalize_optional_int((payload or {}).get('total_nums'))
-    items_nums = normalize_optional_int((payload or {}).get('items_nums'))
+    payload = payload or {}
+    job_id = str(payload.get('jobid') or payload.get('job_id') or '').strip()
+    total_nums = normalize_optional_int(payload.get('total_nums'))
+    items_nums = normalize_optional_int(payload.get('items_nums'))
+    increment_value = payload.get('items_nums_increment')
+    if increment_value is None:
+        increment_value = payload.get('increment')
+    items_nums_increment = normalize_optional_int(increment_value)
 
-    if not isinstance(record_id, int) or record_id <= 0:
-        return jsonify(dict(status='error', message='record_id 无效')), 400
-    if total_nums is None or total_nums < 0:
+    if not job_id:
+        return jsonify(dict(status='error', message='jobid 无效')), 400
+    if payload.get('total_nums') is not None and (total_nums is None or total_nums < 0):
         return jsonify(dict(status='error', message='预期抓取数必须是大于等于 0 的整数')), 400
-    if items_nums is None or items_nums < 0:
+    if payload.get('items_nums') is not None and (items_nums is None or items_nums < 0):
         return jsonify(dict(status='error', message='抓取数量必须是大于等于 0 的整数')), 400
+    if increment_value is not None and (items_nums_increment is None or items_nums_increment < 0):
+        return jsonify(dict(status='error', message='抓取数量增加值必须是大于等于 0 的整数')), 400
+    if payload.get('items_nums') is not None and increment_value is not None:
+        return jsonify(dict(status='error', message='items_nums 和 items_nums_increment 不能同时传入')), 400
+    if payload.get('total_nums') is None and payload.get('items_nums') is None and increment_value is None:
+        return jsonify(dict(status='error', message='没有需要更新的数据')), 400
 
     updated_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     conn = connect_writable(DAILY_STATS_DB)
     try:
         row = conn.execute(
             '''
-            SELECT record_id, spider_name, job_id, total_nums, items_nums
+            SELECT *
             FROM spider_monitor_coverage
-            WHERE record_id = ?
+            WHERE job_id = ? AND status IN ('close', 'error')
+            ORDER BY event_time DESC, record_id DESC
+            LIMIT 1
             ''',
-            (record_id,)
+            (job_id,)
         ).fetchone()
         if not row:
             return jsonify(dict(status='error', message='记录不存在')), 404
 
-        conn.execute(
-            '''
-            UPDATE spider_monitor_coverage
-            SET total_nums = ?, items_nums = ?, updated_at = ?
-            WHERE record_id = ?
-            ''',
-            (total_nums, items_nums, updated_at, record_id)
-        )
+        next_total_nums = total_nums if payload.get('total_nums') is not None else normalize_optional_int(row['total_nums'])
+        if increment_value is not None:
+            conn.execute(
+                '''
+                UPDATE spider_monitor_coverage
+                SET total_nums = ?,
+                    items_nums = COALESCE(items_nums, 0) + ?,
+                    updated_at = ?
+                WHERE record_id = ?
+                ''',
+                (next_total_nums, items_nums_increment, updated_at, row['record_id'])
+            )
+        else:
+            next_items_nums = items_nums if payload.get('items_nums') is not None else (normalize_optional_int(row['items_nums']) or 0)
+            conn.execute(
+                '''
+                UPDATE spider_monitor_coverage
+                SET total_nums = ?, items_nums = ?, updated_at = ?
+                WHERE record_id = ?
+                ''',
+                (next_total_nums, next_items_nums, updated_at, row['record_id'])
+            )
+        updated_row = conn.execute(
+            'SELECT * FROM spider_monitor_coverage WHERE record_id = ?',
+            (row['record_id'],)
+        ).fetchone()
+        next_total_nums = normalize_optional_int(updated_row['total_nums'])
+        next_items_nums = normalize_optional_int(updated_row['items_nums']) or 0
         conn.commit()
     finally:
         conn.close()
 
-    coverage_rate = format_coverage_rate(items_nums, total_nums)
+    previous_total_nums = normalize_optional_int(row['total_nums'])
+    previous_items_nums = normalize_optional_int(row['items_nums'])
+    previous_rate = format_spider_monitor_rate(previous_total_nums, previous_items_nums)
+    current_rate = format_spider_monitor_rate(next_total_nums, next_items_nums)
+    coverage_changed = previous_rate != current_rate
+    mail_sent = False
+    mail_message = '抓全率未变化，未发送邮件'
+    if coverage_changed:
+        try:
+            mail_sent, mail_message = send_spider_monitor_coverage_change_mail(
+                dict(updated_row),
+                previous_total_nums,
+                previous_items_nums,
+            )
+            if mail_sent:
+                mark_spider_monitor_mail_result(
+                    dict(updated_row),
+                    sent_at=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                    error_message=None,
+                )
+        except Exception as err:
+            mail_message = str(err)[:500]
+
+    coverage_rate = format_coverage_rate(next_items_nums, next_total_nums)
     return jsonify(dict(
         status='ok',
-        record_id=record_id,
+        record_id=row['record_id'],
         spider=row['spider_name'],
         job_id=row['job_id'],
-        total_nums=total_nums,
-        items_nums=items_nums,
+        total_nums=next_total_nums,
+        items_nums=next_items_nums,
+        items_nums_increment=items_nums_increment if increment_value is not None else 0,
+        coverage_changed=coverage_changed,
+        mail_sent=mail_sent,
+        mail_message=mail_message,
         coverage_rate=coverage_rate,
-        rate_class=get_coverage_rate_class(items_nums, total_nums),
+        rate_class=get_coverage_rate_class(next_items_nums, next_total_nums),
         updated_at=updated_at,
         message='抓全率已更新',
     ))

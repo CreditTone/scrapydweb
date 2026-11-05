@@ -391,7 +391,7 @@
         </thead>
         <tbody>
         {% for row in rows %}
-          <tr data-record-id="{{ row.record_id }}">
+          <tr data-job-id="{{ row.job_id|e }}">
             <td>{% set doc_url = spider_doc_url(row.spider) %}{% if doc_url %}<a class="task-link" href="{{ doc_url }}">{{ row.name }}</a>{% else %}{{ row.name }}{% endif %}</td>
             <td>{{ row.spider }}</td>
             <td>{{ row.job_id }}</td>
@@ -465,14 +465,14 @@
       var rateCell = row.querySelector('.js-coverage-rate-cell');
       var totalNode = row.querySelector('.js-edit-total-nums');
       var itemsNode = row.querySelector('.js-edit-items-nums');
-      var recordId = row.getAttribute('data-record-id');
+      var jobId = row.getAttribute('data-job-id');
       fetch('{{ url_for("daily_stats.update_coverage_stats_record") }}', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          record_id: recordId,
+          jobid: jobId,
           total_nums: totalNums,
           items_nums: itemsNums
         })
